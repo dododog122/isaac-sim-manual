@@ -2,7 +2,7 @@
 
 暑期實習完整成果總覽網站，整合四條主線的技術文件、實測影片與分析結果。
 
-🔗 **線上瀏覽**：`https://dododog122.github.io/isaac-sim-manual/`
+🔗 **線上瀏覽**：[https://dododog122.github.io/isaac-sim-manual/](https://dododog122.github.io/isaac-sim-manual/)
 
 ## 內容涵蓋
 
