@@ -1,0 +1,2900 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>機器人場景建置與訓練手冊</title>
+<style>
+  :root{
+    --bg:#faf9f6;
+    --panel:#ffffff;
+    --ink:#232323;
+    --sub:#6e6a63;
+    --line:#e4e0d8;
+    --serif: "Times New Roman", "Songti TC", "Songti SC", "SimSun", "STSong", "Noto Serif CJK TC", serif;
+
+    --blue:#eaf2f8;      --blue-ink:#2e5f7f;   --blue-line:#cfe0ec;
+    --orange:#fbeee0;    --orange-ink:#9c5a1e; --orange-line:#efd9bf;
+    --yellow:#fbf6df;    --yellow-ink:#8a7000; --yellow-line:#eee2ad;
+    --pink:#fbebf0;      --pink-ink:#99406b;   --pink-line:#efd0dd;
+    --gray:#f0efec;      --gray-ink:#55534d;   --gray-line:#dedad2;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:var(--serif);
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.75;
+    font-size:16px;
+  }
+  h1,h2,h3{font-weight:600; letter-spacing:0.01em;}
+  a{color:inherit;}
+
+  /* ---------- 頂部世界切換列 ---------- */
+  .worldbar{
+    display:flex;
+    align-items:center;
+    gap:0;
+    border-bottom:1px solid var(--line);
+    background:var(--panel);
+    padding:0 32px;
+  }
+  .brand{
+    font-size:17px;
+    font-weight:700;
+    padding:16px 24px 16px 0;
+    border-right:1px solid var(--line);
+    margin-right:8px;
+    white-space:nowrap;
+  }
+  .world-tab{
+    padding:17px 20px;
+    cursor:pointer;
+    font-size:15px;
+    color:var(--sub);
+    border-bottom:2px solid transparent;
+    white-space:nowrap;
+  }
+  .world-tab:hover{color:var(--ink);}
+  .world-tab.active{color:var(--ink); font-weight:700;}
+
+  /* ---------- Landing ---------- */
+  .landing{
+    max-width:1080px;
+    margin:0 auto;
+    padding:70px 32px 100px;
+  }
+  .landing-head{
+    text-align:center;
+    margin-bottom:56px;
+  }
+  .landing-head h1{
+    font-size:34px;
+    margin:0 0 14px;
+  }
+  .landing-head p{
+    color:var(--sub);
+    font-size:16px;
+    max-width:560px;
+    margin:0 auto;
+  }
+  .world-cards{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:26px;
+  }
+  @media (max-width:820px){ .world-cards{grid-template-columns:1fr;} }
+  .world-card{
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:34px 28px;
+    cursor:pointer;
+    background:var(--panel);
+    transition:box-shadow .15s ease, transform .15s ease;
+    position:relative;
+    overflow:hidden;
+  }
+  .world-card::before{
+    content:"";
+    position:absolute; top:0; left:0; right:0; height:4px;
+  }
+  .world-card:hover{ box-shadow:0 10px 26px rgba(0,0,0,0.07); transform:translateY(-3px); }
+  .world-card .num{
+    font-size:13px;
+    color:var(--sub);
+    letter-spacing:0.12em;
+    margin-bottom:14px;
+  }
+  .world-card h2{
+    font-size:22px;
+    margin:0 0 10px;
+  }
+  .world-card p{
+    font-size:14.5px;
+    color:var(--sub);
+    margin:0 0 18px;
+  }
+  .world-card .enter{
+    font-size:13.5px;
+    font-weight:700;
+  }
+
+  /* ---------- 主體 layout ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns:280px 1fr;
+    min-height:calc(100vh - 58px);
+  }
+  @media (max-width:860px){ .layout{grid-template-columns:1fr;} }
+
+  .sidebar{
+    border-right:1px solid var(--line);
+    padding:26px 22px;
+    background:var(--panel);
+  }
+  .world-title{
+    font-size:19px;
+    margin:0 0 4px;
+  }
+  .world-desc{
+    font-size:13.5px;
+    color:var(--sub);
+    margin:0 0 22px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--line);
+  }
+  .search-box{
+    width:100%;
+    padding:9px 13px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    font-family:var(--serif);
+    font-size:14px;
+    margin-bottom:20px;
+    background:var(--bg);
+  }
+  .cat-group-label{
+    font-size:12px;
+    color:var(--sub);
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    margin:18px 0 8px;
+  }
+  .cat-group-label:first-of-type{margin-top:0;}
+  .cat-btn{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    width:100%;
+    text-align:left;
+    padding:10px 12px;
+    border-radius:3px;
+    border:none;
+    background:transparent;
+    cursor:pointer;
+    font-family:var(--serif);
+    font-size:14.5px;
+    color:var(--ink);
+    margin-bottom:2px;
+  }
+  .cat-btn:hover{background:var(--bg);}
+  .cat-btn.active{background:var(--bg); font-weight:700;}
+  .cat-btn .dot{ width:7px;height:7px;border-radius:50%; flex:0 0 auto; }
+  .cat-count{ margin-left:auto; font-size:11.5px; color:var(--sub); font-weight:400; }
+
+  .main{ padding:34px 46px 70px; max-width:920px; }
+
+  .breadcrumb{
+    font-size:13px;
+    color:var(--sub);
+    margin-bottom:18px;
+  }
+  .breadcrumb span.sep{ margin:0 6px; }
+  .breadcrumb button{
+    background:none;border:none;font-family:var(--serif);color:var(--blue-ink);cursor:pointer;font-size:13px;padding:0;
+  }
+
+  .topic-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+    gap:16px;
+    margin-top:8px;
+  }
+  .topic-card{
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:20px 20px;
+    cursor:pointer;
+    background:var(--panel);
+    transition:box-shadow .12s ease;
+  }
+  .topic-card:hover{ box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+  .topic-card .step-num{
+    font-size:12px;
+    color:var(--sub);
+    margin-bottom:8px;
+    letter-spacing:0.08em;
+  }
+  .topic-card h3{
+    margin:0 0 8px;
+    font-size:16px;
+  }
+  .topic-card p{
+    margin:0;
+    font-size:13px;
+    color:var(--sub);
+  }
+
+  .category-title{ font-size:24px; margin:0 0 6px; }
+  .category-desc{ color:var(--sub); font-size:15px; margin:0 0 22px; }
+
+  .badge{
+    display:inline-block;
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:0.03em;
+    padding:4px 11px;
+    border-radius:2px;
+    margin-bottom:14px;
+  }
+
+  .detail-panel{
+    border:1px solid var(--line);
+    border-radius:3px;
+    background:var(--panel);
+    padding:38px 42px;
+  }
+  .detail-panel h2{ margin-top:0; font-size:25px; }
+  .detail-panel .lede{
+    font-size:15.5px;
+    color:var(--sub);
+    margin-bottom:26px;
+    padding-bottom:22px;
+    border-bottom:1px solid var(--line);
+  }
+  .step-list{ margin:0; padding-left:22px; }
+  .step-list li{ margin-bottom:10px; font-size:15px; }
+  .section-label{
+    font-weight:700;
+    font-size:14px;
+    color:var(--ink);
+    margin:28px 0 10px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  .section-label:first-of-type{ margin-top:0; }
+  pre{
+    background:#f6f4ef;
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:16px 18px;
+    overflow-x:auto;
+    font-size:13px;
+    line-height:1.6;
+    font-family:"Courier New", monospace;
+  }
+  code{ font-family:"Courier New", monospace; }
+  table{ width:100%; border-collapse:collapse; font-size:14px; margin:10px 0 6px; }
+  th,td{ border:1px solid var(--line); padding:9px 12px; text-align:left; vertical-align:top; }
+  th{ background:var(--bg); font-weight:700; }
+  .tip{
+    border-left:3px solid var(--blue-ink);
+    background:var(--blue);
+    padding:14px 18px;
+    font-size:14px;
+    margin:16px 0;
+  }
+  .warn{
+    border-left:3px solid var(--orange-ink);
+    background:var(--orange);
+    padding:14px 18px;
+    font-size:14px;
+    margin:16px 0;
+  }
+  .home-hint{ color:var(--sub); font-size:14px; margin-top:44px; }
+  ::selection{ background:#d8e7f1; }
+</style>
+</head>
+<body>
+
+<div class="worldbar" id="worldbar"></div>
+<div id="app"></div>
+
+<script>
+/* ============================================================
+   資料：三個世界，各自獨立的分類與主題
+   ============================================================ */
+const WORLDS = {
+
+/* ===================== 世界一：Isaac Sim ===================== */
+isaacsim: {
+  label: "Isaac Sim 場景建置導覽手冊",
+  short: "Isaac Sim",
+  color: "blue",
+  desc: "材質貼圖、物理特性、場景與機器人組裝、感測器、腳本工具與除錯",
+  categories: {
+    materials: {
+      label: "材質與外觀", icon: "◆", color:"blue",
+      desc: "改變物件顏色、貼上真實圖片、處理貼圖跑掉的問題",
+      topics: {
+        create_material: {
+          title: "建立材質",
+          summary: "選物件建材質，或先建材質再套用",
+          content: `
+<div class="section-label">兩種建立方式</div>
+<ol class="step-list">
+<li><b>方式一：</b>先選取要換外觀的 Mesh，再執行 <code>Create → Material → Omni PBR</code>。右下角進度條跑完、顯示消失才算真正建好，材質會自動套用到選取的物件。</li>
+<li><b>方式二：</b>在空白處點一下，不選任何物件，執行 <code>Create → Material → Omni PBR</code>。建好的材質只存在 Looks 資料夾，之後透過 Property 面板「Materials on selected models」下拉選單套用，或直接拖曳到物件上。</li>
+</ol>
+<div class="tip">材質建立後會自動歸類到 Stage 裡的 Looks 資料夾。巢狀匯入的場景可能同時存在多個 Looks 資料夾，需留意。</div>
+<div class="section-label">教學示範影片</div>
+<iframe src="https://drive.google.com/file/d/1oFcY_on8p3OMH1FUMjyuOcCCVnEtZo9q/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<iframe src="https://drive.google.com/file/d/1vctakFmPJmGuH5xBArbEcRVT4wvZXztO/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);margin-top:10px;"></iframe>`
+        },
+        apply_texture: {
+          title: "貼上指定圖片",
+          summary: "Albedo Map 是核心欄位，適用於任何真實物體外觀還原",
+          content: `
+<div class="section-label">操作步驟</div>
+<ol class="step-list">
+<li>選取物件的材質（Property 面板「Materials on selected models」，或直接點材質球）</li>
+<li>展開 Albedo 分類，找到 Albedo Map（部分版本顯示為 Diffuse Texture 或 Base Color Map）</li>
+<li>點選資料夾圖示，選擇圖片檔（PNG／JPG）</li>
+<li>切換至 RTX 渲染模式方能顯示最終效果，Storm 等預覽模式未必即時反映</li>
+</ol>
+<div class="section-label">貼圖顯示異常排查</div>
+<table>
+<tr><th>症狀</th><th>解法</th></tr>
+<tr><td>完全未顯示，維持灰或白色</td><td>模型缺少 UV，開啟 Enable World Space</td></tr>
+<tr><td>圖片被拉伸變形</td><td>調整 Texture Scale</td></tr>
+<tr><td>圖片方向錯誤</td><td>調整 Texture Rotate</td></tr>
+<tr><td>位置未對準</td><td>調整 Texture Translate</td></tr>
+<tr><td>模型多組 UV 貼錯組別</td><td>調整 UV Space Index</td></tr>
+</table>
+<div class="warn">圓柱體包覆一圈的標籤（如飲料罐），若上述參數調整後仍扭曲，代表 UV 展開方式本身有誤，須回到建模階段（如 Blender）重新展開 UV。</div><div class="warn"><b>實戰補充：</b>STL 匯入的物件貼圖時，建議同時開啟 <b>Enable World Space</b> 與 <b>Enable Project UVW Coordinates</b> 兩者一起，貼圖才能正確對應到 Mesh 的材質屬性，只開其中一個可能仍顯示不正確。</div>
+<div class="section-label">教學示範影片</div>
+<iframe src="https://drive.google.com/file/d/1JvJzxEWjEBiU4RVoWsXy72qC1UwqvMKi/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        uv_params: {
+          title: "UV 參數對照表",
+          summary: "官方 OmniPBR UVs 分類完整參數",
+          content: `
+<table>
+<tr><th>參數</th><th>作用</th><th>預設值</th></tr>
+<tr><td>Enable Project UVW Coordinates</td><td>以投影方式決定貼圖包覆，不依賴模型本身 UV</td><td>false</td></tr>
+<tr><td>Enable World Space</td><td>切換世界座標／物件座標投影</td><td>false</td></tr>
+<tr><td>UV Space Index</td><td>選擇第幾組 UV</td><td>0</td></tr>
+<tr><td>Texture Translate</td><td>平移貼圖 (X,Y)</td><td>0,0</td></tr>
+<tr><td>Texture Rotate</td><td>旋轉貼圖角度</td><td>0</td></tr>
+<tr><td>Texture Scale</td><td>縮放貼圖 (X,Y)</td><td>1,1</td></tr>
+</table>
+<div class="section-label">教學示範影片</div>
+<iframe src="https://drive.google.com/file/d/16kZQUh2odLoSA9lH3_EmaeYzzNde3emR/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<iframe src="https://drive.google.com/file/d/1GPLCfGMMpdoWeqHVlaFHCDj4cvMm0dB2/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);margin-top:10px;"></iframe>`
+        },
+        material_manage: {
+          title: "材質管理",
+          summary: "快速定位、反向查詢、批次替換",
+          content: `
+<ul class="step-list">
+<li><b>快速定位：</b>選取物件後，材質欄位旁箭頭或材質球圖示可跳轉至對應材質</li>
+<li><b>反向查詢：</b>材質上按右鍵選擇 Select Bound Objects，可選出所有使用此材質的物件</li>
+<li><b>材質替換：</b>選取欲替換材質設為目標，選取新材質設為來源，執行 Swap 後所有綁定舊材質的物件自動更新</li>
+</ul>`
+        },
+        other_material_types: {
+          title: "其他材質範本",
+          summary: "OmniGlass、OmniSurface、OmniHair 的適用時機",
+          content: `
+<table>
+<tr><th>範本</th><th>適合場景</th></tr>
+<tr><td>OmniPBR</td><td>一般物體，最為泛用</td></tr>
+<tr><td>OmniGlass</td><td>玻璃、透明壓克力等需穿透感的物件</td></tr>
+<tr><td>OmniSurfaceBase</td><td>含次表面散射的精緻表面材質，運算成本較高</td></tr>
+<tr><td>OmniHairBase</td><td>毛髮／絨毛材質</td></tr>
+<tr><td>OmniEmissive</td><td>自體發光物件，如螢幕、燈光面板</td></tr>
+</table>`
+        },
+        substance_designer: {
+          title: "Substance Designer 進階材質",
+          summary: "Albedo、Normal、Roughness、Metallic 完整貼圖組",
+          content: `
+<ol class="step-list">
+<li>於 Substance Designer 生成完整貼圖組：Albedo（顏色）、Normal（凹凸細節）、Roughness（粗糙度）、Metallic（金屬感）</li>
+<li>分別貼入 OmniPBR 對應欄位：Albedo 對應顏色圖案；Normal Map 對應 Normals 分類；Roughness／Metallic 對應 Reflectivity 分類</li>
+<li>亦可於 Substance Designer 直接編輯生成 MDL 檔，複製至 Omniverse 資源路徑即可使用</li>
+</ol>
+<div class="tip">此路徑投入時間較高，建議先以 Albedo Map 完成外觀還原，待需求明確時再投入進階材質製作。</div>`
+        },
+        texture_script: {
+          title: "批次貼圖腳本",
+          summary: "物件數量多時的自動化處理",
+          content: `
+<pre><code>import omni.usd
+from pxr import UsdShade, Sdf
+
+stage = omni.usd.get_context().get_stage()
+
+def apply_texture_material(target_prim_path, texture_path, material_name):
+    material_path = f"/World/Looks/{material_name}"
+    material = UsdShade.Material.Define(stage, material_path)
+    shader = UsdShade.Shader.Define(stage, material_path + "/Shader")
+    shader.CreateIdAttr("OmniPBR")
+    shader.CreateInput("diffuse_texture", Sdf.ValueTypeNames.Asset).Set(texture_path)
+    material.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
+    target_prim = stage.GetPrimAtPath(target_prim_path)
+    UsdShade.MaterialBindingAPI(target_prim).Bind(material)
+
+apply_texture_material(
+    "/World/cola_bottle/mesh_",
+    "/home/user/textures/cola_label.png",
+    "cola_material"
+)</code></pre>`
+        },
+        reflectivity_full: {
+          title: "Reflectivity（反射）完整參數",
+          summary: "Roughness Amount / Map / Influence、Metallic Amount / Map / Influence、Specular、ORM",
+          content: `
+<table>
+<tr><th>參數</th><th>作用</th><th>預設值</th></tr>
+<tr><td>Roughness Amount</td><td>0=完美鏡面反射，1=完全無反射（漫射）</td><td>0.5</td></tr>
+<tr><td>Roughness Map Influence</td><td>0=採用 Roughness Amount 數值，1=完全採用 Roughness Map</td><td>0.0</td></tr>
+<tr><td>Roughness Map</td><td>用貼圖定義表面各處不同的粗糙度分布</td><td>—</td></tr>
+<tr><td>Metallic Amount</td><td>0=非金屬（介電質），1=金屬（導體）</td><td>0.0</td></tr>
+<tr><td>Metallic Map Influence</td><td>0=採用 Metallic Amount，1=完全採用 Metallic Map</td><td>0.0</td></tr>
+<tr><td>Metallic Map</td><td>用貼圖定義表面各處哪裡是金屬、哪裡不是</td><td>—</td></tr>
+<tr><td>Specular</td><td>高光反射強度</td><td>0.5</td></tr>
+<tr><td>Enable ORM Texture</td><td>使用「打包」的 Occlusion/Roughness/Metallic 貼圖（R=遮蔽、G=粗糙、B=金屬），取代分開三張貼圖</td><td>false</td></tr>
+</table>
+<div class="tip"><b>實戰筆記：</b>Roughness Map 可以做出裂痕、刮痕這類表面細節效果——同一張圖案，貼在 Roughness 上是「改變反光分布」，貼在 Normal Map 上則是「真正改變光影明暗模擬凹凸雕刻感」，兩者效果不同、適合搭配同一張圖分別測試對比。</div>
+<div class="section-label">教學示範影片</div>
+<iframe src="https://drive.google.com/file/d/1mGqDEmMSQ6za5h6Y8JQThlpluw63vbka/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        ao_full: {
+          title: "AO（環境光遮蔽）",
+          summary: "Ambient Occlusion to Diffuse、Ambient Occlusion Map",
+          content: `
+<table>
+<tr><th>參數</th><th>作用</th></tr>
+<tr><td>Ambient Occlusion to Diffuse</td><td>AO 對 Diffuse 貼圖的影響程度，0=不影響，1=完全套用</td></tr>
+<tr><td>Ambient Occlusion Map</td><td>接受貼圖檔案定義 AO 數值，通常是從建模軟體預先算好的貼圖</td></tr>
+</table>
+<div class="warn"><b>實戰筆記（重要）：</b>如果只把 Ambient Occlusion to Diffuse 拉高、卻沒有搭配 AO Map 貼圖，物件會直接變全黑，因為沒有貼圖可以定義「哪裡該暗、哪裡不用暗」，等於整個表面都被套用最大遮蔽效果。只有搭配正確的 AO Map，才能顯示出貼圖圖案對應的陰影細節，讓物件呈現更清楚的立體感，這是最容易踩的坑，示範時建議直接對比「只調數值」vs「數值+貼圖」兩種結果。</div>
+<div class="section-label">教學示範影片</div>
+<iframe src="https://drive.google.com/file/d/1V-A_4-A7uorLAdN7Sh_XKokCLsYAgGNk/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<iframe src="https://drive.google.com/file/d/16M2DgJFJ2DMUqE9zuPqghXhroqg0lNIO/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);margin-top:10px;"></iframe>`
+        },
+        emissive_opacity_normal_full: {
+          title: "Emissive / Opacity / Normal 完整參數",
+          summary: "自發光、透明度、法線貼圖的官方參數與實戰筆記",
+          content: `
+<div class="section-label">Emissive（自發光）</div>
+<table>
+<tr><th>參數</th><th>作用</th><th>預設值</th></tr>
+<tr><td>Enable Emission</td><td>開關，是否讓物件自體發光</td><td>false</td></tr>
+<tr><td>Emissive Color</td><td>發光顏色</td><td>1.0, 1.0, 0.1</td></tr>
+<tr><td>Emissive Color Map</td><td>用貼圖定義發光顏色分布</td><td>—</td></tr>
+<tr><td>Emissive Mask Map</td><td>用貼圖定義哪裡發光、哪裡不發光</td><td>—</td></tr>
+<tr><td>Emissive Intensity</td><td>發光強度（數值可以拉到遠超過 1，例如 800、5000）</td><td>1.0</td></tr>
+</table>
+<div class="section-label">Opacity（透明度）</div>
+<table>
+<tr><th>參數</th><th>作用</th><th>預設值</th></tr>
+<tr><td>Enable Opacity</td><td>開關，是否啟用整體透明度</td><td>false</td></tr>
+<tr><td>Enable Opacity Texture</td><td>開關，是否啟用透明度貼圖</td><td>false</td></tr>
+<tr><td>Opacity Amount</td><td>1=完全不透明，0=完全透明</td><td>1.0</td></tr>
+<tr><td>Opacity Map</td><td>用灰階貼圖定義各處透明程度</td><td>—</td></tr>
+<tr><td>Opacity Map Mono Source</td><td>決定貼圖用哪個通道判斷透明度：alpha 通道／RGB 平均／亮度／RGB 最大值</td><td>mono_average</td></tr>
+<tr><td>Opacity Threshold</td><td>0=採用漸層透明；大於 0=用門檻值決定完全透明或完全不透明（鏤空剪裁效果，如網子、樹葉）</td><td>0.0</td></tr>
+</table>
+<div class="section-label">Normals（法線貼圖）</div>
+<table>
+<tr><th>參數</th><th>作用</th><th>預設值</th></tr>
+<tr><td>Normal Map Strength</td><td>凹凸細節強度</td><td>1.0</td></tr>
+<tr><td>Normal Map</td><td>法線貼圖檔案，建議用 DirectX 格式</td><td>—</td></tr>
+<tr><td>Detail Normal Strength / Map</td><td>疊加更細緻的微觀表面細節（例如在大範圍凹凸上再疊加細小刮痕）</td><td>0.3</td></tr>
+<tr><td>Normal Map Flip U/V Tangent</td><td>DirectX 與 OpenGL 格式的法線貼圖 Y 軸方向相反，貼圖顯示錯誤時切換這個開關</td><td>V=true（預設為 DirectX）</td></tr>
+</table>
+<div class="tip"><b>實戰筆記：</b>Normal Map 適合做出「雕刻感」的表面刻痕，跟 Roughness Map 的差異在於——Roughness 只改變反光分布（表面看起來霧或亮），Normal 才是真正透過改變光影明暗來模擬凹凸／刻痕的立體感，兩者可以疊加使用達到更真實的效果。</div>
+<div class="tip"><b>UV 屬性補充：</b>如果想調整貼圖在物件表面的位置、旋轉角度，使用材質的 UV 分類底下 Texture Translate（位置）／Texture Rotate（旋轉）／Texture Scale（縮放）這三個參數，詳見材質分類的 UV 參數對照表。</div>
+<div class="section-label">教學示範影片</div>
+<iframe src="https://drive.google.com/file/d/1iO_vwGM-G1UhAbdSj2l3kvthiraBM-Ss/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<iframe src="https://drive.google.com/file/d/1iPmAugbHhr6Xw_EDE6v5kA8LRtP8otRI/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);margin-top:10px;"></iframe>`
+        }
+      }
+    },
+
+    physics: {
+      label: "物理特性", icon:"◆", color:"orange",
+      desc: "Rigid Body、碰撞體、關節、摩擦力、Articulation",
+      topics: {
+        physics_scene: {
+          title: "Physics Scene 與 Ground Plane",
+          summary: "整個場景物理系統的起點",
+          content: `
+<ol class="step-list">
+<li>手動建立場景時須自行加入：<code>Create → Physics → Simulation Scene</code></li>
+<li>選取後於 Property 面板設定 Simulation Steps per Second（未設置時預設 60 steps/s）</li>
+<li>若無獨立地板 Mesh，可直接以 <code>Create → Physics → Ground Plane</code> 作為安全網</li>
+</ol>
+<div class="tip">整個 Stage 僅能有一個 Physics Scene。缺少此設定時，Play 後所有物件皆不受重力影響、不會產生碰撞。</div>`
+        },
+        rigid_body: {
+          title: "Rigid Body",
+          summary: "使物件受重力影響並可被推動",
+          content: `
+<ol class="step-list">
+<li>選取物件，右鍵執行 <code>Add → Physics → Rigid Body</code>（選擇進階版，Property 面板方顯示完整參數）</li>
+</ol>
+<table>
+<tr><th>參數</th><th>作用</th><th>建議值</th></tr>
+<tr><td>Mass</td><td>物件質量（公斤）</td><td>依實際重量設定</td></tr>
+<tr><td>Solver Position Iteration Count</td><td>求解穩定度</td><td>一般 4；易抖動物件（薄片）建議 16</td></tr>
+<tr><td>Max Angular Velocity</td><td>角速度上限</td><td>5.0 rad/s 起</td></tr>
+<tr><td>Angular Damping</td><td>轉動後停止速度</td><td>2.0 起</td></tr>
+<tr><td>Enable CCD</td><td>連續碰撞偵測，防止高速穿模</td><td>薄片、高速物件開啟</td></tr>
+</table>
+<div class="section-label">教學示範影片</div>
+<iframe src="https://drive.google.com/file/d/1JP7nRd-tCu9ovnmqRwM55BBeO4ZETx2y/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        colliders: {
+          title: "Collider 與碰撞近似",
+          summary: "Convex Hull、Convex Decomposition、SDF Mesh",
+          content: `
+<ol class="step-list">
+<li>選取物件，右鍵執行 <code>Add → Physics → Collider</code></li>
+<li>於 Property 面板選擇 Collision Approximation</li>
+</ol>
+<table>
+<tr><th>類型</th><th>適合</th><th>備註</th></tr>
+<tr><td>Convex Hull</td><td>一般實心物件</td><td>效能最佳，會將凹陷處填實</td></tr>
+<tr><td>Convex Decomposition</td><td>有明顯凹槽或孔洞的物件</td><td>以多個凸形拼出凹陷</td></tr>
+<tr><td>SDF Mesh</td><td>中空容器（杯、碗、鏤空造型）</td><td>唯一能保留真實凹陷輪廓的方式</td></tr>
+<tr><td>Triangle Mesh</td><td>靜態結構（牆、地板）</td><td>剛體不支援，會退回 Convex Hull</td></tr>
+</table>
+<div class="tip">檢視碰撞形狀：Viewport 左上角眼睛圖示 → Show by type → Physics → Colliders → Selected，即顯示綠色線框。</div>`
+        },
+        contact_offset: {
+          title: "Contact Offset／Rest Offset",
+          summary: "解決穿模與抖動的關鍵參數",
+          content: `
+<ul class="step-list">
+<li><b>Rest Offset：</b>膨脹或收縮碰撞幾何範圍，用於校正視覺 Mesh 與碰撞範圍大小不一致</li>
+<li><b>Contact Offset：</b>決定距碰撞幾何多遠開始產生接觸約束，數值大則偵測較早但耗費效能，數值小則可能抖動或穿模</li>
+</ul>
+<div class="tip">建議起始值：Contact Offset 0.005（5mm）、Rest Offset 0.001（1mm）。互相接觸的兩物件應維持同一數量級。</div>`
+        },
+        friction_materials: {
+          title: "摩擦力與 Physics Material",
+          summary: "接觸與摩擦係數設定",
+          content: `
+<ol class="step-list">
+<li><code>Create → Physics → Physics Material</code>，選擇 Rigid Body Material</li>
+<li>選取 Collider Geometry，於 Property 面板「Physics Materials on Selected Models」指定材質</li>
+</ol>
+<div class="section-label">Combine Mode 優先順序</div>
+<p><code>average &lt; min &lt; multiply &lt; max</code>。當兩物件接觸模式不同時，取優先權較高者。</p>`
+        },
+        joint_types_full: {
+          title: "Joint 類型完整清單",
+          summary: "Revolute、Prismatic、Spherical、Fixed、D6、Distance、Gear、Rack and Pinion",
+          content: `
+<table>
+<tr><th>類型</th><th>自由度</th><th>適合物件</th><th>限制/備註</th></tr>
+<tr><td>Revolute（旋轉關節）</td><td>1 個旋轉自由度</td><td>門片、手臂單軸關節</td><td>機器人可訓練關節的兩種之一</td></tr>
+<tr><td>Prismatic（滑動關節）</td><td>1 個平移自由度</td><td>抽屜、升降平台、夾爪開合</td><td>機器人可訓練關節的兩種之一</td></tr>
+<tr><td>Spherical（球型關節）</td><td>2 個正交旋轉弧度</td><td>肩關節、球窩接頭</td><td>無法加 Drive 主動驅動，限制角度不支援不對稱</td></tr>
+<tr><td>Fixed（固定關節）</td><td>0（完全鎖死）</td><td>零件焊死、不需要相對運動的連接</td><td>最單純的一種</td></tr>
+<tr><td>D6（六自由度可配置）</td><td>最多 6 個自由度，逐一開放/鎖定</td><td>需要複雜自由度組合的機構</td><td>Spherical 遇到限制時的替代方案，鎖住所有平移即可模擬球型關節</td></tr>
+<tr><td>Distance（距離關節）</td><td>限制兩點間距離範圍</td><td>安全繩、伸縮桿</td><td>視覺化為內外兩圈，代表最小/最大距離</td></tr>
+<tr><td>Gear（齒輪關節，Meta Joint）</td><td>耦合兩個 Revolute Joint</td><td>齒輪組、聯動旋轉機構</td><td>需啟用 Omni PhysX UI 擴充功能，連接既有的兩個 Revolute（Hinge 0/1）</td></tr>
+<tr><td>Rack and Pinion（Meta Joint）</td><td>耦合 Revolute + Prismatic</td><td>齒條齒輪機構</td><td>用齒輪比把旋轉角度換算成移動距離</td></tr>
+</table>
+<div class="warn"><b>重要限制：</b>Isaac Lab／Articulation 系統目前只有 Revolute 與 Prismatic 支援向量化驅動（可被程式主動控制、參與訓練）。Spherical 甚至無法加 Drive。機器人本體的可訓練關節只能用 Revolute／Prismatic；Spherical、D6、Gear 這類適合場景道具（門、抽屜、齒輪裝飾機構），屬於被動或半自主的機構。</div>
+<div class="tip">建議教學拆分順序：① Revolute + Prismatic（機器人關節實際會用到的兩種）② Fixed + Distance（最單純）③ Spherical + D6（講清楚 Spherical 的限制與替代方案）④ Gear + Rack and Pinion（進階，Meta Joint 概念與前面不同，是耦合既有關節）。</div>
+<div class="section-label">教學示範影片</div>
+<iframe src="https://drive.google.com/file/d/1pJ2lMW7OrnivK_8D19HMEmCNiTE_iPyY/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<iframe src="https://drive.google.com/file/d/1wuF05mjpvrrie8ylzdVZZOc2qpuwCcKD/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);margin-top:10px;"></iframe>
+<iframe src="https://drive.google.com/file/d/161S3vuRi4yU-zQ73xVpAGmzCX_nWfodP/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);margin-top:10px;"></iframe>`
+        },
+        joints: {
+          title: "Joint 建立與設定",
+          summary: "以 Revolute Joint 為例的完整流程",
+          content: `
+<div class="section-label">標準流程</div>
+<ol class="step-list">
+<li>先選第一個 Rigid Body（固定端），再選第二個 Rigid Body（會動端）</li>
+<li><code>Create → Physics → Joints → Revolute Joint</code></li>
+<li>Joint 座標框架預設對齊第二個選取物件當下的姿勢</li>
+</ol>
+<div class="section-label">Axis、Limits、Drive</div>
+<ul class="step-list">
+<li>Axis：預設 X 軸自由，可於屬性中改為 Y／Z</li>
+<li>Limits：建立時預設無限制，Lower／Upper Limit 單位為度</li>
+<li>Joint Drive：右鍵執行 Add → Physics → Angular Drive，可主動控制關節位置或速度</li>
+</ul>
+<div class="section-label">實務建議流程</div>
+<ol class="step-list">
+<li>建立一個空 Xform 作為固定端參考點，置於 /World 底下，避免放置於疊加多層 Transform 的複雜父節點下</li>
+<li>於 Viewport 手動將動端物件移至正確視覺位置</li>
+<li>同時選取兩端物件後再建立 Joint，由引擎自動計算對齊參數，避免手動填寫 Local Position</li>
+</ol>
+<div class="warn">Joint Friction 屬性僅在 Joint 屬於 Articulation 時生效，單一 Rigid Body 搭配獨立 Joint 設定無效，應改用 Rigid Body 本身的 Angular Damping。</div>`
+        },
+        joint_verify_script: {
+          title: "Joint 對齊驗證腳本",
+          summary: "以數值驗證取代肉眼判斷",
+          content: `
+<pre><code>import omni.usd
+from pxr import UsdGeom, UsdPhysics, Gf
+
+stage = omni.usd.get_context().get_stage()
+joint_prim = stage.GetPrimAtPath("/World/your_joint_path")
+joint_api = UsdPhysics.Joint(joint_prim)
+
+body0 = stage.GetPrimAtPath(joint_api.GetBody0Rel().GetTargets()[0])
+body1 = stage.GetPrimAtPath(joint_api.GetBody1Rel().GetTargets()[0])
+pos0 = joint_api.GetLocalPos0Attr().Get()
+pos1 = joint_api.GetLocalPos1Attr().Get()
+
+cache = UsdGeom.XformCache()
+w0 = cache.GetLocalToWorldTransform(body0).Transform(Gf.Vec3d(*pos0))
+w1 = cache.GetLocalToWorldTransform(body1).Transform(Gf.Vec3d(*pos1))
+
+dist = (w0 - w1).GetLength()
+print(f"兩端錨點誤差：{dist*1000:.3f} mm")</code></pre>
+<div class="tip">誤差在 1mm 以內方屬合格。</div>`
+        },
+        articulation: {
+          title: "Articulation",
+          summary: "多剛體連動系統的專用優化架構",
+          content: `
+<p>Articulation 為多關節連動剛體結構（機器人手臂、腿部）設計的優化模擬架構，效能與穩定度優於一般 Joint，但存在拓樸限制，不支援閉環結構。</p>
+<pre><code>from omni.isaac.core import World
+from isaacsim.core.prims import SingleArticulation
+
+world = World()
+world.reset()
+
+arm = SingleArticulation(prim_path="/World/your_arm_path")
+arm.initialize()</code></pre>
+<div class="warn">初始化順序錯誤將導致 <code>Physics Simulation View is not created</code>。</div>`
+        },
+        scale_check: {
+          title: "場景尺寸與 Scale 驗證",
+          summary: "以世界座標 Bounding Box 實測",
+          content: `
+<pre><code>from pxr import Usd, UsdGeom
+
+stage = omni.usd.get_context().get_stage()
+prim = stage.GetPrimAtPath("/World/your_object")
+
+bbox_cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), includedPurposes=[UsdGeom.Tokens.default_])
+size = bbox_cache.ComputeWorldBound(prim).ComputeAlignedRange().GetSize()
+print(f"世界座標尺寸(m)：X={size[0]:.4f} Y={size[1]:.4f} Z={size[2]:.4f}")</code></pre>
+<div class="tip">將輸出數字與 CAD 實測尺寸比對，不應僅依賴 Transform 面板數字，可能存在多層 Scale 疊加。</div>`
+        },
+        troubleshooting: {
+          title: "物理常見錯誤對照表",
+          summary: "逐一對應解法",
+          content: `
+<table>
+<tr><th>錯誤／現象</th><th>可能原因</th><th>解法</th></tr>
+<tr><td>Physics Simulation View is not created</td><td>Articulation 於 Play 前初始化</td><td>先 world.reset()，Play 後再 initialize()</td></tr>
+<tr><td>found a joint with disjointed body transforms</td><td>Joint 兩端錨點未對齊</td><td>以驗證腳本檢查，改用視覺對齊流程建立</td></tr>
+<tr><td>no bodies defined at body0 and body1</td><td>建立當下未同時選取兩物件</td><td>建立前確認選取狀態，建立後立即檢查</td></tr>
+<tr><td>中空物體被填實</td><td>Collision Approximation 使用 Convex Hull</td><td>改用 SDF Mesh</td></tr>
+<tr><td>剛體遭撞飛、長時間彈跳</td><td>Mass 過輕、Iteration 過低、無 Damping</td><td>提高 Mass 與 Iteration，加入 Angular Damping</td></tr>
+<tr><td>穿模</td><td>Offset 未設置，或高速物件未啟用 CCD</td><td>設定合理 Offset，啟用 Enable CCD</td></tr>
+</table>`
+        }
+      }
+    },
+
+    scene_setup: {
+      label: "場景建立與匯入", icon:"◆", color:"yellow",
+      desc: "Create 選單、資產匯入、單位換算",
+      topics: {
+        create_menu: {
+          title: "Create 選單",
+          summary: "場景元素建立的主要入口",
+          content: `
+<ul class="step-list">
+<li>Mesh：Cube、Sphere、Cylinder、Cone 等基本幾何</li>
+<li>Physics：Simulation Scene、Ground Plane、Rigid Body、Collider、Joints、Physics Material</li>
+<li>Light：Dome Light、Distant Light、Sphere Light</li>
+<li>Material：Omni PBR、Omni Glass 等材質範本</li>
+<li>Camera：建立場景相機</li>
+<li>Visual Scripting：Action Graph（OmniGraph）</li>
+</ul>`
+        },
+        import_assets: {
+          title: "匯入 CAD／USD 資產",
+          summary: "格式支援與單位換算注意事項",
+          content: `
+<ol class="step-list">
+<li><code>File → Import</code>，支援 STL／OBJ／USD，另可透過 CAD Converter 轉換 STEP 等格式</li>
+<li>匯入後先確認單位：若 Scale 數字與原始 CAD 尺寸差 1000 倍，補設 Scale=0.001（mm 至 m 換算）</li>
+<li>將 Prim 命名為有意義的名稱，避免保留預設 mesh_／node_</li>
+</ol>
+<div class="tip">不需個別控制的組合檔（如整片牆壁）可直接整體匯入；需獨立設定物理或位置的物件（會被夾取、需開合）才需拆成獨立零件檔案。</div>
+<div class="section-label">教學示範影片</div>
+<iframe src="https://drive.google.com/file/d/18xLjeSxNO85X3-zNlP304p7lThHV27OX/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        onshape_cad: {
+          title: "CAD 匯入其他管道",
+          summary: "Onshape Importer、CAD Converter",
+          content: `
+<ul class="step-list">
+<li>Onshape Importer：直接從 Onshape 雲端 CAD 拉取模型</li>
+<li>CAD Converter：轉換多種工程 CAD 格式（STEP、IGES）為 USD 可用格式</li>
+</ul>`
+        },
+        content_browser: {
+          title: "Content Browser",
+          summary: "資產管理的主要工具",
+          content: `
+<p>Content Browser 為瀏覽、拖曳資產進場景的主要視窗，另有 Material Browser、NVIDIA Asset Browser、SimReady Explorer 可搭配使用，SimReady 資產已含正確物理屬性，可節省從零建模的時間。</p>`
+        }
+      }
+    },
+
+    robot_setup: {
+      label: "機器人組裝", icon:"◆", color:"pink",
+      desc: "URDF 匯入、Articulation 組裝、關節校調",
+      topics: {
+        urdf_import: {
+          title: "URDF 匯入",
+          summary: "最常見的機器人匯入格式",
+          content: `
+<ol class="step-list">
+<li>以 URDF Importer Extension 匯入 .urdf 檔案</li>
+<li>確認 Joint 是否正確對應 USD Physics Joint、Link 是否帶有 Rigid Body</li>
+<li>匯入完成後以 Asset Validation 工具檢查資產結構</li>
+</ol>
+<div class="tip">亦支援反向操作：USD to URDF Exporter，將組裝完成的機器人匯出為 URDF。MJCF 格式另有專屬 Importer。</div>`
+        },
+        robot_assembler: {
+          title: "Robot Assembler",
+          summary: "組裝手臂、夾爪、感測器",
+          content: `
+<p>Robot Assembler 用於將不同來源的機器人零件組裝、固定、對齊為完整資產，無須手動計算各零件相對座標。</p>
+<div class="section-label">配套工具</div>
+<ul class="step-list">
+<li>Mesh Merge Tool：合併多個 Mesh 為單一物件</li>
+<li>Robot Self-Collision Detector：檢查連桿間是否存在不合理碰撞</li>
+<li>Gain Tuner Extension：調整關節驅動增益（P/D Gain）</li>
+</ul>`
+        },
+        joint_inspector: {
+          title: "Joint Inspector",
+          summary: "統一檢視所有關節設定",
+          content: `
+<p>提供總覽視窗，列出場景中所有 Joint 的軸向、限位、驅動參數，可一次性檢查與修改，避免逐一開啟各個 Joint。</p>`
+        },
+        joint_drive_tuning: {
+          title: "Joint Drive Gain 調整",
+          summary: "官方教學：關節驅動增益校調",
+          content: `
+<ul class="step-list">
+<li>Stiffness 過低：關節反應軟弱，難以到達目標角度</li>
+<li>Stiffness 過高：反應過度、產生震盪</li>
+<li>Damping：抑制震盪，過低持續晃動，過高動作遲緩</li>
+</ul>`
+        }
+      }
+    },
+
+    sensors: {
+      label: "感測器", icon:"◆", color:"blue",
+      desc: "相機、觸覺、慣性等各類感測器",
+      topics: {
+        camera_sensor: {
+          title: "相機感測器",
+          summary: "RGB、深度、結構光",
+          content: `
+<ul class="step-list">
+<li>Camera Sensors：基本 RGB 相機，可設定解析度、視野角、焦距</li>
+<li>Depth Sensors：模擬 RGB-D 相機</li>
+<li>Structured Light Cameras：模擬結構光相機</li>
+</ul>
+<div class="tip">RTX Sensors（RTX Lidar、RTX Radar）以光線追蹤方式模擬物理特性，擬真度較高但運算成本較大。</div>`
+        },
+        physics_sensors: {
+          title: "物理感測器",
+          summary: "Contact、IMU、Joint State、Effort",
+          content: `
+<table>
+<tr><th>感測器</th><th>作用</th></tr>
+<tr><td>Contact sensor</td><td>偵測物件接觸與接觸力大小</td></tr>
+<tr><td>IMU sensor</td><td>模擬慣性測量單元</td></tr>
+<tr><td>Joint state sensor</td><td>讀取關節角度與速度</td></tr>
+<tr><td>Effort sensor</td><td>讀取關節施加力矩</td></tr>
+</table>`
+        },
+        physx_sensors: {
+          title: "PhysX SDK 感測器",
+          summary: "Lidar、Lightbeam、Proximity",
+          content: `<p>直接透過 PhysX SDK 底層運算，適合高頻率、輕量級距離或接近偵測場景。</p>`
+        }
+      }
+    },
+
+    scripting: {
+      label: "Python 腳本工具", icon:"◆", color:"orange",
+      desc: "Script Editor、除錯技巧、常用程式片段",
+      topics: {
+        script_editor: {
+          title: "Omniverse Script Editor",
+          summary: "即時執行 Python 的主要除錯工具",
+          content: `
+<p>Script Editor 可於介面內直接執行 Python 並即時檢視結果，適合快速驗證想法與撰寫診斷腳本。複雜、需版本控制之腳本建議搭配 VS Code；快速一次性診斷則以 Script Editor 效率最高。</p>`
+        },
+        core_api: {
+          title: "Core API 基礎",
+          summary: "World、SingleArticulation 等常用物件",
+          content: `
+<pre><code>from omni.isaac.core import World
+from isaacsim.core.prims import SingleArticulation
+
+world = World()
+world.reset()
+
+arm = SingleArticulation(prim_path="/World/your_arm")
+arm.initialize()
+
+positions = arm.get_joint_positions()
+arm.set_joint_positions(positions)</code></pre>
+<div class="warn">初始化順序為最常見錯誤來源：world.reset() 須在 Play 前，articulation.initialize() 須在 Play 後。</div>`
+        }
+      }
+    },
+
+    debugging: {
+      label: "除錯與效能", icon:"◆", color:"gray",
+      desc: "常見錯誤排查、效能優化方向",
+      topics: {
+        debug_tools: {
+          title: "除錯工具總覽",
+          summary: "Debug Draw、Commands Tool、Profiling",
+          content: `
+<ul class="step-list">
+<li>Debug Drawing Extension：於場景繪製除錯線條與座標軸</li>
+<li>Omniverse Commands Tool：記錄操作對應的底層指令</li>
+<li>Profiling Performance（Tracy）：分析場景效能瓶頸</li>
+</ul>`
+        },
+        performance_handbook: {
+          title: "效能優化方向",
+          summary: "官方 Performance Optimization Handbook 要點",
+          content: `
+<ul class="step-list">
+<li>碰撞近似優先選擇效能較佳的類型，非必要不使用 SDF Mesh</li>
+<li>Solver Iteration Count 僅於真正抖動的物件上提高</li>
+<li>大量重複場景訓練使用 Isaac Lab 平行環境 Cloner，避免手動複製多份場景</li>
+<li>相機與感測器數量增加將顯著拖慢渲染，非必要視角應移除</li>
+</ul>`
+        }
+      }
+    }
+  }
+},
+
+/* ===================== 世界二：機器人訓練 ===================== */
+training: {
+  label: "機器人訓練",
+  short: "機器人訓練",
+  color: "orange",
+  desc: "ACT、SmolVLA、VLA、π0、GR00T、WAM 各模型的原理、架構與適用場景",
+  categories: {
+    models: {
+      label: "模型架構", icon:"◆", color:"orange",
+      desc: "六種機器人操作模型的完整對照",
+      topics: {
+        act: {
+          title: "ACT",
+          summary: "Action Chunking with Transformers — 一次預測整段動作，資料效率最高的基準模型",
+          content: `
+<div class="section-label">核心概念</div>
+<p>ACT 提出動作區塊化：模型每讀取一次影像，即一次預測接下來連續 k 步的動作序列，而非逐步反應。訓練時以 Conditional VAE 建模示範動作中的變異性，使生成動作貼近真實示範分布。</p>
+<div class="section-label">架構</div>
+<pre><code>[多相機影像] + [目前關節狀態]
+        ↓  Transformer Encoder
+     潛在特徵 z（CVAE 建模示範資料變異性）
+        ↓  Transformer Decoder
+   一次輸出 k 步動作序列
+        ↓  Temporal Ensembling（重疊預測加權平均）
+      平滑連續的最終動作輸出</code></pre>
+<div class="section-label">優點</div>
+<ul class="step-list">
+<li>資料效率極高，50 至 100 次示範即可學會公釐級精細任務</li>
+<li>動作平滑，適合需要連貫性的雙臂協調任務</li>
+<li>架構單純，除錯成本低</li>
+</ul>
+<div class="section-label">缺點</div>
+<ul class="step-list">
+<li>不具語言理解能力，無法以自然語言指令切換任務</li>
+<li>泛化能力有限，物件顏色或位置變化時成功率明顯下降</li>
+<li>無預訓練骨幹，每個任務須從零學習</li>
+</ul>
+<div class="section-label">適用場景</div>
+<p>物體位置相對固定、需高頻率（可達 50Hz）雙臂精細操作的任務，如工業裝配、實驗室操作、精細物件插拔。</p>
+<div class="section-label">訓練方法</div>
+<pre><code>python -m lerobot.scripts.lerobot_train \\
+  --dataset.repo_id=your_repo/task_name \\
+  --policy.type=act \\
+  --policy.chunk_size=100 \\
+  --output_dir=outputs/train/task_act_v1 \\
+  --policy.device=cuda \\
+  --steps=100000 \\
+  --batch_size=8</code></pre>
+<div class="section-label">本專案實測影片</div>
+<p style="font-size:14px;color:var(--sub);">單臂夾取放置：80 集資料、100K 步，loss 由 6.755 降至 0.037，真機評估一次成功。</p>
+<iframe src="https://drive.google.com/file/d/1G8U4UDz1PFI69wUaY0n4Cbtoj8IvLJZX/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<p style="font-size:14px;color:var(--sub);margin-top:14px;">雙臂廚房任務（吃魚＋交接）：205 集資料，訓練至 400K 步（約 8.65 epoch），loss 收斂於 0.056-0.062。夾魚放盤穩定，交接動作仍有精準度落差。</p>
+<iframe src="https://drive.google.com/file/d/1OuOMYKudZFq8KzH3pZimNTo_w21HsXgU/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);margin-top:10px;"></iframe>`
+        },
+        smolvla: {
+          title: "SmolVLA",
+          summary: "輕量化視覺語言動作模型 — 語言條件化多任務的入門選擇",
+          content: `
+<div class="section-label">核心概念</div>
+<p>SmolVLA 為 Hugging Face 推出的輕量化 VLA，僅保留視覺語言骨幹前一半層數，並以非同步推理將動作執行與下一步決策計算解耦，兼顧效率與語言理解能力。</p>
+<div class="section-label">架構</div>
+<pre><code>[相機影像] → SigLIP 視覺編碼器（壓縮為少量 token）
+[語言指令] → 文字 token
+        ↓
+   SmolVLM-2 視覺語言骨幹（僅用前半層數）
+        ↓
+   動作生成：Cross-Attention 與 Self-Attention 交替
+        ↓
+   Flow-Matching 生成連續動作序列
+        ↓
+[RobotClient 執行] ⇄ [PolicyServer 平行計算下一批動作]</code></pre>
+<div class="section-label">優點</div>
+<ul class="step-list">
+<li>模型體積小（450M 參數），消費級 GPU 即可訓練</li>
+<li>非同步推理使任務完成時間平均加快三成，且不犧牲成功率</li>
+<li>具備語言理解能力，支援多任務訓練</li>
+<li>與 LeRobot 框架整合度最高</li>
+</ul>
+<div class="section-label">缺點</div>
+<ul class="step-list">
+<li>層數縮減，複雜語意推理與長期規劃能力較弱</li>
+<li>官方真實世界評估仍採用有限離散起始位置，非完全連續隨機</li>
+<li>基礎設施除錯成本不低，語言與視覺骨幹增加了除錯維度</li>
+</ul>
+<div class="section-label">適用場景</div>
+<p>資源有限、需語言條件化多任務、且已使用 LeRobot 生態系的場景。</p>
+<div class="warn">預訓練影響顯著：社群資料集預訓練後成功率由 51.7% 提升至 78.3%，訓練時應載入官方預訓練權重，不建議從零開始訓練。</div>
+<div class="section-label">訓練方法</div>
+<pre><code>python -m lerobot.scripts.lerobot_train \\
+  --dataset.repo_id=your_repo/task_name \\
+  --policy.type=smolvla \\
+  --policy.pretrained_path=lerobot/smolvla_base \\
+  --output_dir=outputs/train/task_smolvla_v1 \\
+  --policy.device=cuda \\
+  --steps=20000 \\
+  --batch_size=8</code></pre>
+<div class="section-label">本專案實測影片</div>
+<p style="font-size:14px;color:var(--sub);">同一份 205 集雙臂資料，載入官方預訓練權重微調 20K 步，loss 收斂至 0.018（低於 ACT）。真機評估發現伺服器端 GPU 驅動異常，推論一度退回 CPU 執行，導致動作延遲明顯、任務未能完成，修復後待重新驗證真實表現。</p>
+<iframe src="https://drive.google.com/file/d/1BBx5oQjyGC21CbGo36nDu0O4l6oeXrhh/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        vla: {
+          title: "VLA（OpenVLA）",
+          summary: "視覺語言動作模型的代表作 — 首個完全開源的高性能大型 VLA",
+          content: `
+<div class="section-label">核心概念</div>
+<p>VLA 為一整類模型的統稱，核心概念是將視覺語言模型直接接上動作輸出，使機器人得以理解自然語言指令。OpenVLA 為此類別的代表作：融合 DINOv2 與 SigLIP 視覺編碼器，接上 Llama 2 語言模型，動作以離散化文字 token 逐步生成。</p>
+<div class="section-label">架構</div>
+<pre><code>[相機影像] → DINOv2 + SigLIP 融合視覺特徵
+[語言指令] → 語言 token
+        ↓
+     Llama 2（7B）語言骨幹
+        ↓
+   動作離散化為文字 token，逐步自迴歸生成</code></pre>
+<div class="section-label">優點</div>
+<ul class="step-list">
+<li>繼承網路規模圖文預訓練知識，對未見過物體與指令具泛化能力</li>
+<li>完全開源，7B 參數規模，支援 LoRA 高效微調</li>
+<li>4-bit 量化後推理效能不減</li>
+</ul>
+<div class="section-label">缺點</div>
+<ul class="step-list">
+<li>控制頻率偏低，單張消費級顯卡約 6Hz，不支援動作區塊化</li>
+<li>預設僅支援單一相機視角，缺乏多視角融合</li>
+</ul>
+<div class="section-label">適用場景</div>
+<p>語意理解導向的雜物收拾、物流分揀等不要求高速即時反應的任務。</p>`
+        },
+        pi0: {
+          title: "π0",
+          summary: "Physical Intelligence 的雙系統架構 — 目前業界公認精確度最高的模型之一",
+          content: `
+<div class="section-label">核心概念</div>
+<p>π0 提出雙系統架構：以 PaliGemma 視覺語言模型負責高階語意規劃（System 2），搭配獨立的 Action Expert 負責高頻直覺動作（System 1），兩者以 Flow Matching 生成連續、高頻的動作區塊。</p>
+<div class="section-label">架構</div>
+<pre><code>[相機影像 + 語言指令]
+        ↓
+   PaliGemma 視覺語言骨幹（System 2：任務規劃）
+        ↓ 特徵傳遞
+   Action Expert（System 1：高頻直覺動作，權重獨立訓練）
+        ↓
+   Flow Matching 生成連續動作序列（50Hz）</code></pre>
+<div class="section-label">優點</div>
+<ul class="step-list">
+<li>首個能流暢完成摺衣服、收拾雜亂餐桌等高複雜度長時序任務的模型</li>
+<li>50Hz 高頻控制，動作連貫不卡頓</li>
+<li>動作與機體資料僅於 Action Expert 訓練，不干擾骨幹既有的圖文常識</li>
+</ul>
+<div class="section-label">缺點</div>
+<ul class="step-list">
+<li>推理開銷較重，通常需伺服器端運算以達到低延遲</li>
+<li>模型本身不開源，僅透過合作取得，社群另有重製版 OpenPI</li>
+</ul>
+<div class="section-label">適用場景</div>
+<p>高擬真度家務機器人、需要靈巧手且動作流暢的長時序任務。</p>`
+        },
+        groot: {
+          title: "GR00T N1",
+          summary: "NVIDIA 通用人形機器人基礎模型 — 從人類影片自學操作技能",
+          content: `
+<div class="section-label">核心概念</div>
+<p>GR00T N1 為通用雙足人形機器人設計的具身智能基礎模型，透過資料金字塔整合網路人類影片、模擬合成資料與真實人形操控資料，並以潛在動作編碼與逆向動力學模型，將無動作標籤的網路影片轉換為可用訓練資料。</p>
+<div class="section-label">架構</div>
+<pre><code>[網路人類影片 + 模擬合成資料 + 真實遙操作資料]
+        ↓
+   逆向動力學模型（IDM）／潛在動作編碼
+   （將無標籤影片轉換為動作標籤）
+        ↓
+   具身特定投影器（Embodiment Projector）
+   （適配不同自由度、規格的人形機器人）
+        ↓
+        統一動作輸出</code></pre>
+<div class="section-label">優點</div>
+<ul class="step-list">
+<li>單一模型可控制不同廠牌、不同關節數的人形機器人</li>
+<li>可運用網路規模人類影片大幅提升操作常識與手眼協調，不完全依賴昂貴機器人示範資料</li>
+<li>末端旋轉以 6D 旋轉表示並歸一化，跨機體轉移時不易產生奇異點</li>
+</ul>
+<div class="section-label">缺點</div>
+<ul class="step-list">
+<li>系統工程高度複雜，依賴 NVIDIA 模擬與生成管線，中小型實驗室難以複製</li>
+<li>設計核心為人形全身控制，用於桌上型雙臂操作屬於超出設計目標的應用</li>
+</ul>
+<div class="section-label">適用場景</div>
+<p>人形雙足機器人、工廠或實驗室協作、跨硬體型號的通用具身平台。</p>`
+        },
+        wam: {
+          title: "WAM／DreamZero",
+          summary: "World Action Model — 動手前先於腦中預演成功畫面的新一代方向",
+          content: `
+<div class="section-label">核心概念</div>
+<p>WAM 突破傳統 VLA 僅被動預測動作的框架：DreamZero 初始化於 14B 參數的影片生成擴散模型，同步預測未來視覺畫面與對應動作，使模型在執行前即具備物理世界的內部模擬能力。</p>
+<div class="section-label">架構</div>
+<pre><code>[當前觀測畫面 + 語言指令]
+        ↓
+   影片生成擴散骨幹（14B，初始化自 Wan2.1）
+        ↓ 生成
+   未來畫面預測（隱式任務規劃）
+        ↓ 對齊
+      對應動作序列
+        ↓
+   執行後將真實觀測注入 KV Cache，持續修正後續預測</code></pre>
+<div class="section-label">優點</div>
+<ul class="step-list">
+<li>對未見過場景、工具、動作類型的表現超越現行最強 VLA 兩倍以上</li>
+<li>新機體僅需約 30 分鐘自由活動資料即可完成適應</li>
+<li>自迴歸推理搭配真實觀測注入，抑制影片生成的誤差累積</li>
+</ul>
+<div class="section-label">缺點</div>
+<ul class="step-list">
+<li>硬體需求極高，需高階伺服器級 GPU 方能達到即時控制頻率</li>
+<li>任務成敗高度依賴內部畫面預測的準確性，預測錯誤將導致執行錯誤</li>
+</ul>
+<div class="section-label">適用場景</div>
+<p>未知開放世界、高度多變環境，以及需快速適應全新機器人硬體的研發場景。</p>
+<div class="tip">此方向發表於 2026 年，屬本領域最前沿的研究階段，工具鏈尚未成熟，現階段列為未來研究方向參考。</div>`
+        }
+      }
+    }
+  }
+},
+
+/* ===================== 世界三：數位孿生 ===================== */
+digitaltwin: {
+  label: "數位孿生",
+  short: "數位孿生",
+  color: "pink",
+  desc: "使用 LeRobot 建立場景、校準、遙控、錄製、訓練與評估的完整實作流程",
+  categories: {
+    pipeline: {
+      label: "LeRobot 實作流程", icon:"◆", color:"pink",
+      desc: "依序完成七個階段，即可從零建立一套可訓練的雙臂機器人系統",
+      topics: {
+        build_scene_sim: {
+          title: "一、模擬場景建置",
+          summary: "在 Isaac Sim 中建立與真實桌面對應的座標系統",
+          content: `
+<ol class="step-list">
+<li>定義座標系原點，建議選在場景箱左後下角，使所有物件座標為正值</li>
+<li>將實體場景各物件依照真實尺寸建模，並匯入 Isaac Sim（詳見 Isaac Sim 手冊「場景建立與匯入」）</li>
+<li>依 Isaac Sim 手冊「物理特性」分類，為每個物件設定對應的 Rigid Body、Collider 與 Joint</li>
+</ol>
+<div class="warn">座標系規劃須將手臂實際可達範圍納入硬性限制條件，於最初定義座標系時即一併考慮，避免實體組裝完成後才發現部分物件位置超出可達範圍。</div>`
+        },
+        build_scene_reality: {
+          title: "二、實體場景搭建",
+          summary: "對照虛擬座標建置實體環境",
+          content: `
+<ol class="step-list">
+<li>依照模擬場景的座標表，量測並定位實體物件位置</li>
+<li>固定門片鉸鏈、牆壁等結構元件</li>
+<li>接上雙臂與相機，確認電源供應足以支撐目前裝置量</li>
+</ol>
+<div class="tip">手臂與相機若共用同一 USB Hub，於雙臂同時運作時容易出現資源競爭，導致通訊不穩定。建議查詢 <code>lsusb -t</code> 確認裝置分佈，將手臂與相機分別接於不同實體孔位。</div>`
+        },
+        calibration: {
+          title: "三、校準",
+          summary: "單臂與雙臂的校準流程",
+          content: `
+<pre><code># 單臂 Follower
+python -m lerobot.scripts.lerobot_calibrate \\
+  --robot.type=so101_follower \\
+  --robot.port=/dev/serial/by-id/xxxx \\
+  --robot.id=my_follower_arm
+
+# 單臂 Leader
+python -m lerobot.scripts.lerobot_calibrate \\
+  --teleop.type=so101_leader \\
+  --teleop.port=/dev/serial/by-id/yyyy \\
+  --teleop.id=my_leader_arm</code></pre>
+<div class="tip">校準時若出現「Press ENTER to use provided calibration file... or type 'c' to run calibration」，須輸入 c 再按 Enter 方能真正重新校準，僅按 Enter 將沿用舊校準值。</div>
+<div class="section-label">夾爪行程須做滿</div>
+<p>校準夾爪時應將扳機動作做到完全放鬆與完全夾緊兩個機械極限，各停留一至二秒，重複數次。若校準完成後 POS 貼近 MIN 或 MAX 其中一端，代表行程未做滿，將導致實際操作時夾爪反應異常。</p>
+<div class="section-label">裝置穩定辨識</div>
+<pre><code>ls -l /dev/serial/by-id/     # 手臂，不受插拔順序影響
+ls -l /dev/v4l/by-id/        # 相機
+ls -l /dev/v4l/by-path/      # 相機型號相同導致 by-id 撞名時的替代方案</code></pre>`
+        },
+        teleoperate: {
+          title: "四、遙控跟隨",
+          summary: "單臂與雙臂遙控設定，含相機常見錯誤排查",
+          content: `
+<pre><code>python -m lerobot.scripts.lerobot_teleoperate \\
+  --robot.type=bi_so_follower \\
+  --robot.id=my_bi_follower \\
+  --robot.left_arm_config.port=/dev/serial/by-id/xxxx_left \\
+  --robot.right_arm_config.port=/dev/serial/by-id/xxxx_right \\
+  --robot.left_arm_config.cameras='{"top": {"type": "opencv", "index_or_path": "/dev/video0", "width": 640, "height": 480, "fps": 30, "fourcc": "YUYV", "backend": 200}}' \\
+  --robot.right_arm_config.cameras='{"gripper_right": {"type": "opencv", "index_or_path": "/dev/video2", "width": 640, "height": 480, "fps": 30, "fourcc": "YUYV", "backend": 200}}' \\
+  --teleop.type=bi_so_leader \\
+  --teleop.id=my_bi_leader \\
+  --teleop.left_arm_config.port=/dev/serial/by-id/yyyy_left \\
+  --teleop.right_arm_config.port=/dev/serial/by-id/yyyy_right \\
+  --display_data=true</code></pre>
+<div class="warn">雙臂版本參數為巢狀寫法，如 <code>--robot.left_arm_config.port</code>，並非 <code>--robot.left_arm_port</code>。外部相機須掛載於左手或右手 config 其中一側，此為 CLI 參數結構限制，不影響資料語意。</div>
+<div class="section-label">相機錯誤排查</div>
+<table>
+<tr><th>錯誤</th><th>原因</th><th>解法</th></tr>
+<tr><td>failed to set capture_width（actual_width=1920）</td><td>相機未指定 FOURCC，維持高解析度低幀率模式</td><td>指定 fourcc: YUYV，解析度設為 640x480</td></tr>
+<tr><td>fourcc 設定失敗</td><td>backend 使用 ANY 自動選擇不一致</td><td>明確指定 backend: 200（V4L2）</td></tr>
+<tr><td>No space left on device</td><td>多顆相機共用 USB 頻寬飽和</td><td>降低請求解析度，或分散接至不同 USB 控制器</td></tr>
+</table>
+<div class="section-label">安全限速</div>
+<p>初次測試建議加上 <code>--robot.left_arm_config.max_relative_target=10</code>，限制單步最大移動幅度，確認穩定後再逐步移除限制。</p>
+<div class="section-label">本專案實測影片</div>
+<p style="font-size:14px;color:var(--sub);">單臂遙控操作，確認 Leader/Follower 校準與硬體通訊正常。</p>
+<iframe src="https://drive.google.com/file/d/1k6s2lLZSmUthy9tn6hcw_QN5W5isMyWG/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<p style="font-size:14px;color:var(--sub);margin-top:14px;">Real-to-Sim 數位孿生：透過 TCP Socket 即時同步真實手臂關節角度至 Isaac Sim 模擬手臂，驗證虛實動作一致。</p>
+<iframe src="https://drive.google.com/file/d/1rxKxiSZ3kPwBP0TeTGlVnc0PKuoPd1Cd/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);margin-top:10px;"></iframe>`
+        },
+        record_data: {
+          title: "五、資料錄製",
+          summary: "正式錄製示範資料集",
+          content: `
+<pre><code>python -m lerobot.scripts.lerobot_record \\
+  --robot.type=bi_so_follower \\
+  --robot.id=my_bi_follower \\
+  ...（同遙控參數）... \\
+  --dataset.repo_id=your_hf_username/task_name \\
+  --dataset.single_task="任務描述文字" \\
+  --dataset.num_episodes=100 \\
+  --dataset.episode_time_s=60 \\
+  --dataset.reset_time_s=10 \\
+  --dataset.push_to_hub=false \\
+  --resume=true \\
+  --dataset.streaming_encoding=true \\
+  --dataset.encoder_threads=2</code></pre>
+<div class="warn">中斷錄製應使用畫面提示的按鍵（如 Escape）讓程式完成儲存流程，於影片編碼階段以 Ctrl+C 強制中斷是資料損毀最常見的原因。<code>--resume=true</code> 可接續已錄製的集數。</div>
+<div class="section-label">確認資料集狀態</div>
+<pre><code>cat ~/.cache/huggingface/lerobot/your_repo/meta/info.json | \\
+  python3 -c "import json,sys; d=json.load(sys.stdin); print('集數:', d.get('total_episodes'))"</code></pre>
+<div class="tip">同一份資料集可直接用於 ACT 與 SmolVLA 兩種模型訓練，無須分別錄製。ACT 訓練時會忽略 single_task 語言描述欄位，SmolVLA 則會使用。</div>
+<div class="section-label">本專案實測影片</div>
+<p style="font-size:14px;color:var(--sub);">單臂示範資料錄製：80 集夾取放置任務，每集 30 秒。</p>
+<iframe src="https://drive.google.com/file/d/1M9SiQtnraTj9ZIy-c3Mnqv_dAz_S9-XR/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<p style="font-size:14px;color:var(--sub);margin-top:14px;">雙臂協作資料錄製：吃魚任務（夾魚放盤→左手遞湯匙→交接→送盤），205 集，交接動作需雙手同步操作，錄製難度最高。</p>
+<iframe src="https://drive.google.com/file/d/1Wp9nX3l9cFpA1ns5wpf-W8Xau97xEoA3/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);margin-top:10px;"></iframe>`
+        },
+        training: {
+          title: "六、訓練",
+          summary: "真實資料、模擬資料與混合訓練",
+          content: `
+<div class="section-label">真實資料訓練</div>
+<p>詳見「機器人訓練」世界的 ACT 與 SmolVLA 頁面，包含完整訓練指令與參數說明。</p>
+<div class="section-label">模擬資料訓練（Isaac Lab）</div>
+<p>場景設計穩定後，可將任務包裝進 Isaac Lab 進行大量平行環境的資料收集，設定檔採用 <code>@configclass</code> 撰寫：</p>
+<pre><code>from isaaclab.assets import ArticulationCfg
+from isaaclab.envs import DirectRLEnvCfg
+from isaaclab.scene import InteractiveSceneCfg
+from isaaclab.sim import SimulationCfg
+from isaaclab.utils import configclass
+
+@configclass
+class KitchenTaskEnvCfg(DirectRLEnvCfg):
+    decimation = 2
+    episode_length_s = 60.0
+    action_space = 12
+    observation_space = 36
+    state_space = 0
+
+    sim: SimulationCfg = SimulationCfg(dt=1/120, render_interval=decimation)
+
+    robot_cfg: ArticulationCfg = SO101_BI_ARM_CFG.replace(
+        prim_path="/World/envs/env_.*/BiArm"
+    )
+
+    scene: InteractiveSceneCfg = InteractiveSceneCfg(
+        num_envs=128, env_spacing=2.0, replicate_physics=True
+    )</code></pre>
+<table>
+<tr><th>欄位</th><th>作用</th></tr>
+<tr><td>decimation</td><td>物理步進與環境步進的比例</td></tr>
+<tr><td>scene.num_envs</td><td>平行訓練環境份數</td></tr>
+<tr><td>robot_cfg.prim_path（regex）</td><td>每份平行環境自動對應一個機器人，無須手動複製</td></tr>
+</table>
+<div class="section-label">混合訓練</div>
+<p>建議比較純模擬、純真實、混合三種資料來源分別訓練的成功率差異，作為後續資料策略的依據。</p>
+<div class="section-label">本專案實測影片</div>
+<p style="font-size:14px;color:var(--sub);">Isaac Lab 模擬資料錄製：115 集含 Domain Randomization 的示範資料，用於比較純模擬訓練與真實資料訓練的落差。</p>
+<iframe src="https://drive.google.com/file/d/121rEOzveI-lLsDKxPT4Cnflx_JtzxH5l/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        evaluate: {
+          title: "七、評估",
+          summary: "真機部署驗證",
+          content: `
+<pre><code>python -m lerobot.scripts.lerobot_record \\
+  --robot.type=bi_so_follower \\
+  ...（同遙控參數）... \\
+  --policy.path=outputs/train/task_act_v1/checkpoints/last/pretrained_model \\
+  --dataset.repo_id=your_repo/eval_task \\
+  --dataset.single_task="任務描述文字" \\
+  --dataset.num_episodes=10 \\
+  --dataset.episode_time_s=60 \\
+  --dataset.reset_time_s=10 \\
+  --dataset.push_to_hub=false</code></pre>
+<div class="warn">評估時手臂將自動移動，首次執行應將手置於急停位置，隨時準備 Ctrl+C 中斷。雙臂評估風險高於單臂，須格外謹慎。</div>
+<div class="section-label">本專案實測影片</div>
+<p style="font-size:14px;color:var(--sub);">純模擬訓練 policy 的真機評估：手臂展現明確的夾取意圖，位置略有偏差（推測與模擬光影/距離估計落差有關），但夾取成功後放置精準度高，驗證 Sim-to-Real 可行性。</p>
+<iframe src="https://drive.google.com/file/d/1r5ILw13gLBmhqDp-Xz13lWzT-mpNDrEP/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        }
+      }
+    }
+  }
+},
+
+/* ===================== 世界三：雙臂協作多任務訓練 ===================== */
+dualarm: {
+  label: "雙臂協作多任務訓練",
+  short: "雙臂多任務",
+  color: "pink",
+  desc: "從單臂單任務到雙臂多任務：六模型訓練成果、任務B進階驗證、與語言驅動任務切換的完整實驗紀錄",
+  categories: {
+
+    overview: {
+      label: "目標與任務設計", icon: "◆", color: "pink",
+      desc: "本階段研究目標、任務A與任務B的設計邏輯",
+      topics: {
+        objectives: {
+          title: "研究目標",
+          summary: "從單臂單任務推進至雙臂多任務，最終驗證語言驅動任務切換",
+          content: `
+<div class="section-label">從單臂單任務到雙臂多任務的規模擴展</div>
+<p>先前階段已完成單一手臂、單一任務（交接動作）的六模型訓練與評估，驗證了各架構在簡單動作空間下的基本可行性。本階段的首要目標，是將訓練規模擴展至雙臂協同操作——動作空間從單臂提升至雙臂共 12 個自由度，模型需同時學習兩隻手臂之間的協調關係，而非單純複製單臂動作邏輯。</p>
+<div class="section-label">多任務與連續動作</div>
+<p>訓練任務從單一交接動作，擴充為兩個性質不同的任務：任務 A（交接）與任務 B（跨臂傳遞並送達指定位置）。任務 B 更包含抓取、跨臂交接、長距離傳遞三個階段的連續動作序列，複雜度高於任務 A 的單次交接，用以驗證模型是否具備處理多階段、連續性動作規劃的能力。</p>
+<div class="section-label">語言驅動任務切換</div>
+<p>本階段最終要驗證的核心問題：模型能否依據語言指令（prompt）的內容，正確判斷並執行對應的任務，而非僅依賴視覺場景差異做出反應。透過刻意設計的場景與指令交叉測試，觀察模型行為究竟是被語言驅動，還是被視覺線索主導。</p>
+<div class="tip">次要延伸方向：Isaac Sim Agent 讓 Agent 自行撰寫並累積專屬的 skill tools（而非直接沿用現成的官方 MCP Server），以加速後續數位孿生場景建置的效率。</div>`
+        },
+        task_design: {
+          title: "任務 A / B 設計",
+          summary: "資料集規格、語意變體設計、場景與物件配置",
+          content: `
+<div class="section-label">任務 A：雙臂交接（Handoff）</div>
+<table>
+<tr><th>項目</th><th>內容</th></tr>
+<tr><td>任務描述</td><td>右手將黃色娃娃從盤中取起，傳遞給左手</td></tr>
+<tr><td>資料集</td><td>fandy122/handoff_doll_v2，171 集</td></tr>
+<tr><td>語言標籤設計</td><td>三種語意相同但表達方式不同的指令，依集數輪替標記，驗證模型語言泛化能力</td></tr>
+</table>
+<ul class="step-list">
+<li>"Right arm hands doll to left arm"</li>
+<li>"Pick up the yellow doll with right arm and hand it to left arm"</li>
+<li>"Right arm passes the doll to left hand"</li>
+</ul>
+<div class="section-label">任務 B：雙臂傳遞至指定位置（Cup Delivery）</div>
+<table>
+<tr><th>項目</th><th>內容</th></tr>
+<tr><td>任務描述</td><td>左手將杯子交給右手，右手將杯子送至右側門邊</td></tr>
+<tr><td>資料集</td><td>fandy122/task_b_cup_to_door，約 201 集</td></tr>
+<tr><td>設計考量</td><td>杯子為低摩擦力圓柱形物體，抓取難度高於任務 A 的娃娃；動作序列包含抓取、跨臂交接、長距離傳遞三階段，複雜度高於任務 A</td></tr>
+<tr><td>語言標籤</td><td>單一固定指令："Left arm hands cup to right arm, right arm delivers cup to the right door"</td></tr>
+</table>
+<div class="tip">任務 A + B 合併後總計 372 集（171 + 201），比例約 46% : 54%，屬合理平衡範圍，可排除資料量失衡作為後續多任務訓練效果不佳的成因。</div>`
+        }
+      }
+    },
+
+    taskA: {
+      label: "任務 A：六模型訓練與評估", icon: "◆", color: "blue",
+      desc: "六種架構於雙臂交接任務上的訓練成果與真機表現",
+      topics: {
+        taskA_overview: {
+          title: "六模型訓練總覽",
+          summary: "ACT、Diffusion Policy、π0、GR00T N1.7、Multitask DiT、MolmoAct2",
+          content: `
+<table>
+<tr><th>模型</th><th>訓練步數</th><th>Batch Size</th><th>最終 Loss</th></tr>
+<tr><td>ACT</td><td>400,000</td><td>8</td><td>0.032–0.034</td></tr>
+<tr><td>Diffusion Policy</td><td>200,000</td><td>32</td><td>0.003–0.004</td></tr>
+<tr><td>π0</td><td>3,000</td><td>4</td><td>0.075</td></tr>
+<tr><td>GR00T N1.7</td><td>20,000</td><td>4</td><td>0.017–0.019</td></tr>
+<tr><td>Multitask DiT</td><td>50,000</td><td>8</td><td>0.008–0.009</td></tr>
+<tr><td>MolmoAct2</td><td>20,000</td><td>4</td><td>0.017–0.019</td></tr>
+</table>
+<div class="warn"><b>關鍵發現：</b>訓練 Loss 與真機表現存在顯著落差。Diffusion Policy 的 Loss 為六模型最低（0.003–0.004），但真機表現最差，未能完成任務——推測為過擬合；ACT 的 Loss 並非最低，真機表現卻最佳。此結果證實訓練 Loss 僅反映對訓練資料分布的擬合程度，無法直接等同真機閉環控制下的實際表現。</div>`
+        },
+        act_result: {
+          title: "ACT 訓練與評估",
+          summary: "本機直接評估，表現優異，動作流暢精準",
+          content: `
+<div class="section-label">評估結果</div>
+<p>動作流暢、精準，穩定完成交接任務，是六模型中真機表現最佳者。</p>
+<div class="section-label">本專案實測影片</div>
+<!-- 請將下方 VIDEO_ID 替換成雲端硬碟中 ACT 任務A真機評估影片的分享連結ID -->
+<iframe src="https://drive.google.com/file/d/1f6dgfBn4lueTweNODAGZZLrm9Jv4QwLt/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        diffusion_result: {
+          title: "Diffusion Policy 訓練與評估",
+          summary: "本機直接評估，Loss最低但真機表現最差",
+          content: `
+<div class="section-label">評估結果</div>
+<p>動作停頓、位置不精準，未能完成任務。儘管訓練 Loss 為六模型中最低，真機表現卻是最差，推測為過擬合現象——模型過度擬合訓練資料分布，卻犧牲了真機閉環控制下的泛化能力。</p>
+<div class="section-label">本專案實測影片</div>
+<!-- 請將下方 VIDEO_ID 替換成雲端硬碟中 Diffusion Policy 任務A真機評估影片的分享連結ID -->
+<iframe src="https://drive.google.com/file/d/1J7Em_t746bssu7LAI_ozAE4-JI9NN4TU/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        pi0_result: {
+          title: "π0 訓練與評估",
+          summary: "Server 遠端推論，僅左手動作正常",
+          content: `
+<div class="section-label">評估結果</div>
+<p>動作有抖動；僅左手夾爪動作正常，右手傳遞/夾取動作幾乎未執行。推測與訓練資料中雙臂動作呈現比例不均，或訓練步數（3,000 步）相對於雙臂協調複雜度而言不足有關。</p>
+<div class="section-label">本專案實測影片</div>
+<!-- 請將下方 VIDEO_ID 替換成雲端硬碟中 π0 任務A真機評估影片的分享連結ID -->
+<iframe src="https://drive.google.com/file/d/12c6GANGn8_lmWriwJ-rCUpCyGDsOgbuC/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        groot_result: {
+          title: "GR00T N1.7 訓練與評估",
+          summary: "Server 遠端推論，抖動最明顯，未能完成任務",
+          content: `
+<div class="section-label">評估結果</div>
+<p>三個大型模型中抖動最明顯者，未能完成任務。此現象與 GR00T 採用擴散動作頭且缺乏 Temporal Ensembling 有關——每次重新規劃的軌跡銜接處容易產生不連續。</p>
+<div class="section-label">本專案實測影片</div>
+<!-- 請將下方 VIDEO_ID 替換成雲端硬碟中 GR00T 任務A真機評估影片的分享連結ID -->
+<iframe src="https://drive.google.com/file/d/1eoXQ2UhLNAdPylrpBu0WXy2S0pS_v_cm/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        molmo_result: {
+          title: "MolmoAct2 訓練與評估",
+          summary: "Server 遠端推論，三者中表現最流暢",
+          content: `
+<div class="section-label">評估結果</div>
+<p>三個透過 Server 遠端推論架構評估的大型模型中，MolmoAct2 表現最流暢，精準度仍有不足但可完整完成交接任務。</p>
+<div class="section-label">本專案實測影片</div>
+<!-- 請將下方 VIDEO_ID 替換成雲端硬碟中 MolmoAct2 任務A真機評估影片的分享連結ID -->
+<iframe src="https://drive.google.com/file/d/1duIZyIOHR4KUnzYci-pthT-KaYP-NP5c/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        multidit_result: {
+          title: "Multitask DiT 訓練與評估",
+          summary: "本機直接評估，出乎意料地良好",
+          content: `
+<div class="section-label">評估結果</div>
+<p>輕微抖動但完整完成任務，表現出乎意料地良好。抖動現象與其擴散式動作頭架構特性一致（同一機制家族的 GR00T 也有類似現象），但整體協調性明顯優於 GR00T。</p>
+<div class="section-label">本專案實測影片</div>
+<!-- 請將下方 VIDEO_ID 替換成雲端硬碟中 Multitask DiT 任務A真機評估影片的分享連結ID -->
+<iframe src="https://drive.google.com/file/d/16Hud2lWoyN-bJHnwaJum20w4fS2lQaGW/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        comparison_analysis: {
+          title: "六模型綜合分析",
+          summary: "架構差異、動作生成機制與真機表現的關聯",
+          content: `
+<div class="section-label">大型模型（π0、GR00T、MolmoAct2）架構性差異</div>
+<p>三個透過 Server 遠端推論架構評估的大型模型表現呈現明顯差異，此差異與各模型的動作生成機制相關——GR00T 採用擴散動作頭且缺乏 Temporal Ensembling，每次重新規劃的軌跡銜接處容易產生不連續；MolmoAct2 的 Action Expert 設計則展現較佳的時序一致性；π0 出現「僅學會左手動作」的現象，推測與訓練資料中雙臂動作呈現比例不均，或訓練步數相對於雙臂協調複雜度而言不足有關。</p>
+<div class="section-label">結論</div>
+<ul class="step-list">
+<li>訓練 Loss 無法直接預測真機表現，真機評估在模型選型決策中具有不可取代的重要性</li>
+<li>擴散式動作生成機制（GR00T、Multitask DiT）容易出現軌跡銜接抖動，但抖動程度受具體架構設計影響差異甚大</li>
+<li>ACT 這類一次性回歸架構在資料量有限時展現最佳的真機穩定性</li>
+</ul>`
+        }
+      }
+    },
+
+    taskB: {
+      label: "任務 B：更難更長的任務驗證", icon: "◆", color: "orange",
+      desc: "僅使用 ACT 與 Multitask DiT，驗證更複雜連續動作的學習能力",
+      topics: {
+        taskB_design: {
+          title: "任務 B 單獨訓練設計",
+          summary: "作為多任務合併訓練前的獨立基準",
+          content: `
+<p>為區隔「多任務訓練導致任務切換能力不足」與「任務 B 動作本身學習困難」兩種可能的失敗原因，於進行 A+B 合併訓練前，先對任務 B 進行單獨訓練，建立獨立基準。僅選用 ACT 與 Multitask DiT 兩個模型進行此階段驗證。</p>
+<div class="tip">任務 B 的動作序列包含抓取（低摩擦力圓柱形物體，難度高於任務A的娃娃）、跨臂交接、長距離傳遞三個階段，是比任務 A 單次交接更嚴苛的連續動作測試。</div>
+<div class="section-label">資料錄製過程展示</div>
+<iframe src="https://drive.google.com/file/d/17Qdy5Jzq4mpz5K7-SW8RIxv65Go-rppD/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        act_taskB_only: {
+          title: "ACT — 任務 B 單獨訓練",
+          summary: "成功克服抓取挑戰，流暢完成多階段任務",
+          content: `
+<div class="section-label">評估結果</div>
+<p>成功克服低摩擦力圓柱形物件的抓取挑戰，完整多階段動作（抓取→交接→送達）流暢完成。</p>
+<div class="section-label">本專案實測影片</div>
+<!-- 請將下方 VIDEO_ID 替換成雲端硬碟中 ACT 任務B單獨訓練真機評估影片的分享連結ID -->
+<iframe src="https://drive.google.com/file/d/1Qo-_cgFEnX4lgAuiWM_Cjl1l_9V4C3kW/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        multidit_taskB_only: {
+          title: "Multitask DiT — 任務 B 單獨訓練",
+          summary: "輕微顫抖但可靠完成任務",
+          content: `
+<div class="section-label">評估結果</div>
+<p>執行時出現輕微顫抖（符合擴散式動作頭缺乏時序平滑機制的預期特性），仍可靠完成整個任務。</p>
+<div class="section-label">本專案實測影片</div>
+<!-- 請將下方 VIDEO_ID 替換成雲端硬碟中 Multitask DiT 任務B單獨訓練真機評估影片的分享連結ID -->
+<iframe src="https://drive.google.com/file/d/1_cDg1mvl3nashyt74veK-mUxrMfr4Ymg/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<div class="section-label">小結</div>
+<p>任務 B 本身在 ACT 與 Multitask DiT 上皆屬可學習任務，建立了乾淨的單任務基準，可作為後續多任務訓練效果比對的依據。</p>`
+        }
+      }
+    },
+
+    multitask: {
+      label: "語言驅動任務切換與交叉測試", icon: "◆", color: "yellow",
+      desc: "A+B 合併多任務訓練，驗證模型能否依 prompt 切換任務",
+      topics: {
+        merge_training: {
+          title: "A+B 合併多任務訓練",
+          summary: "訓練配置與 ACT 作為視覺捷徑對照組的理論基礎",
+          content: `
+<table>
+<tr><th>模型</th><th>訓練步數</th><th>Batch Size</th><th>最終 Loss</th></tr>
+<tr><td>ACT（AB合併）</td><td>500,000</td><td>8</td><td>0.039–0.042</td></tr>
+<tr><td>Multitask DiT（AB合併，初版）</td><td>50,000</td><td>8</td><td>—</td></tr>
+<tr><td>Multitask DiT（AB合併，延長版）</td><td>70,000</td><td>4（本機顯存限制）</td><td>0.006–0.009</td></tr>
+</table>
+<div class="section-label">ACT 作為視覺捷徑對照組的理論基礎</div>
+<p>ACT 架構本身不具備語言條件化能力——其輸入僅包含影像與關節狀態，無文字指令輸入管道。這代表 ACT 訓練於 A+B 合併資料集後，唯一能用以區分「該做任務 A 還是任務 B」的線索，僅剩視覺場景本身的差異。因此 ACT 的多任務訓練結果，可作為判斷「純視覺場景差異是否足以區分任務」的重要對照基準。</p>`
+        },
+        crosstest_design: {
+          title: "交叉測試矩陣設計",
+          summary: "場景 × 指令的四組交叉組合",
+          content: `
+<table>
+<tr><th>組別</th><th>場景</th><th>指令內容</th><th>驗證目的</th></tr>
+<tr><td>組1</td><td>任務A場景（無杯）</td><td>任務A指令（3種變體輪替）</td><td>語言泛化驗證：理解語意而非記憶固定字串</td></tr>
+<tr><td>組2</td><td>任務B場景（有杯）</td><td>任務B指令</td><td>正常對齊組：場景與指令一致時的基礎表現</td></tr>
+<tr><td>組3</td><td>任務A場景（無杯）</td><td>任務B指令（要求拿杯子）</td><td>交叉測試：場景無對應物件時是否仍嘗試回應語言</td></tr>
+<tr><td>組4</td><td>任務B場景（有杯）</td><td>任務A指令（要求交接娃娃）</td><td>交叉測試：視覺場景與語言指令衝突時何者主導</td></tr>
+</table>`
+        },
+        act_crosstest: {
+          title: "ACT 交叉測試結果",
+          summary: "語言泛化成功，但確認不具真正任務切換能力",
+          content: `
+<div class="section-label">組1（語言泛化）</div>
+<p>三種講法皆成功觸發正確交接動作意圖，右手取物精準度略低於單任務基準，但一旦成功夾取後傳遞動作流暢——證實語言泛化能力成功建立，模型並非單純記憶固定字串。</p>
+<div class="section-label">組2、組3、組4</div>
+<p>因 ACT 不具語言條件化能力，觀察到訓練後呈現「右手固定執行任務B動作、左手固定執行任務A動作」的手臂-任務固定綁定模式，而非依指令切換，故未進行後續交叉測試。</p>
+<div class="section-label">本專案實測影片</div>
+<p style="font-size:14px;color:var(--sub);">ACT 任務A基準真機評估影片可參考「任務A：六模型訓練與評估」頁面；ACT 專屬的三種語意變體交叉測試影片尚待補充錄製。</p>
+<div class="warn">此結果本身即為有效的負面對照發現：確認 ACT 在此設定下並非透過語言驅動任務選擇，而是形成了與手臂身份綁定的固定反應模式。</div>`
+        },
+        multidit_crosstest_50k: {
+          title: "Multitask DiT 交叉測試（50,000步版本）",
+          summary: "部分語言驅動證據，但尚未穩定壓過視覺線索",
+          content: `
+<table>
+<tr><th>組別</th><th>結果</th></tr>
+<tr><td>組1（語言泛化）</td><td>三種指令變體皆成功觸發正確交接意圖，確認語言泛化有效</td></tr>
+<tr><td>組2（正常對齊）</td><td>5集中1集完全成功，完成率較單任務基準（B_only）明顯下降</td></tr>
+<tr><td>組3（場景A+指令B）</td><td>左手嘗試執行抓取動作，即使場景中無杯子存在，顯示模型確實回應語言指令內容，非純粹依賴視覺場景</td></tr>
+<tr><td>組4（場景B+指令A）</td><td>右手對娃娃指令有微弱回應意圖，左手同時受可見杯子牽引，呈現語言與視覺線索交互影響、尚未穩定分出主導的中間狀態</td></tr>
+</table>
+<div class="section-label">本專案實測影片 — 組1：語言泛化（三種指令變體）</div>
+<p style="font-size:13px;color:var(--sub);">變體一："Right arm hands doll to left arm"</p>
+<iframe src="https://drive.google.com/file/d/1ozsxsJif4nQyfdTN4e9TFdq8D2QnfISZ/preview" width="100%" height="360" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<p style="font-size:13px;color:var(--sub);margin-top:14px;">變體二："Pick up the yellow doll with right arm and hand it to left arm"</p>
+<iframe src="https://drive.google.com/file/d/1y-0ZlXPakWF4yx3f2ZfJ9KpUKsstFoui/preview" width="100%" height="360" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<p style="font-size:13px;color:var(--sub);margin-top:14px;">變體三："Right arm passes the doll to left hand"</p>
+<iframe src="https://drive.google.com/file/d/1BSK-70-Ewk3UV2r4vaxXIBwA0iR-5f4F/preview" width="100%" height="360" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+
+<div class="section-label">組2：正常對齊（場景B + 指令B）</div>
+<iframe src="https://drive.google.com/file/d/1VaODZvP1gt91euHYKcNOQDszgvMSnmgv/preview" width="100%" height="360" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+
+<div class="section-label">組3：場景A（無杯）+ 指令B</div>
+<p style="font-size:14px;color:var(--sub);">影片尚待補充錄製。</p>
+
+<div class="section-label">組4：場景B（有杯）+ 指令A</div>
+<iframe src="https://drive.google.com/file/d/1YcISooOImqul4aubVavjND57lR5R7mtq/preview" width="100%" height="360" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+
+<div class="tip">初步結論：模型並非完全依賴視覺捷徑（否則組3不會嘗試回應「不存在」物件的指令），但語言指令的主導力道尚不足以穩定壓過視覺場景線索，模型處於「開始學會聽指令，但尚未學到能穩定壓過視覺干擾」的中間學習階段。</div>`
+        },
+        multidit_crosstest_70k: {
+          title: "延長訓練實驗：70,000步版本與過擬合現象",
+          summary: "延長訓練並未改善，反而增加視覺依賴、減少語言主導",
+          content: `
+<p>為驗證訓練不足是否為組2完成率偏低的成因，對 Multitask DiT 進行延長訓練（50,000 → 70,000 步）。重新執行相同四組交叉測試：</p>
+<table>
+<tr><th>組別</th><th>50,000步版本</th><th>70,000步版本</th><th>變化</th></tr>
+<tr><td>組1（語言泛化）</td><td>三種指令皆成功</td><td>表現退步</td><td>劣化</td></tr>
+<tr><td>組2（正常對齊）</td><td>1/5 成功</td><td>2/5 成功</td><td>表面提升</td></tr>
+<tr><td>組3（場景A+指令B）</td><td>左手嘗試抓取（回應語言）</td><td>一開始不知如何行動，直到看見杯子才產生強烈意圖</td><td>轉向依賴視覺</td></tr>
+<tr><td>組4（場景B+指令A）</td><td>右手微弱意圖+左手受杯子干擾</td><td>左手強烈欲拿杯子，右手完全不動</td><td>語言指令幾乎被完全忽略</td></tr>
+</table>
+<div class="section-label">本專案實測影片</div>
+<p style="font-size:14px;color:var(--sub);">70,000步版本四組交叉測試影片尚待補充錄製。</p>
+<div class="warn">綜合分析：延長訓練並未帶來全面改善，反而呈現語言指令主導力減弱、視覺場景依賴增強的系統性傾向。組2的表面提升（1/5→2/5）並非「聽懂語言」帶來的進步，而是模型更依賴視覺捷徑的副作用。此現象與先前 ACT 700,000 步訓練導致過擬合、犧牲真機表現的經驗一致，顯示訓練步數並非越多越好——過度訓練可能使模型放棄較難學習的語言條件化路徑，轉而依賴更容易擬合的視覺捷徑。</div>
+<p>基於此發現，決定採用 50,000 步版本作為 Multitask DiT 多任務語言驅動切換的代表性結果，70,000 步版本之完整交叉測試數據作為過擬合現象的重要負面對照案例保留記錄。</p>`
+        },
+        final_conclusion: {
+          title: "本階段綜合結論",
+          summary: "五點核心發現與明確結論",
+          content: `
+<div class="section-label">核心發現</div>
+<ul class="step-list">
+<li>語言泛化能力可獨立於任務切換能力成功建立：ACT 與 Multitask DiT 皆證實模型能正確理解語意相近但表達不同的指令</li>
+<li>多任務合併訓練對個別任務的動作精細度造成可測量的負面干擾：任務A抓取精準度、任務B完成率皆較各自單任務基準下降，已排除資料比例失衡（46:54）作為成因</li>
+<li>Multitask DiT 展現部分語言驅動證據，但尚未達到能穩定壓過視覺場景線索的程度</li>
+<li>延長訓練步數並非改善多任務表現的有效方向：70,000步版本顯示語言主導力減弱、視覺依賴增強，與 ACT 700,000步過擬合經驗相互印證</li>
+<li>ACT 作為視覺捷徑對照組的角色已充分確立：其架構性缺乏語言條件化能力，強化了語言條件化模型確實在利用語言資訊而非單純視覺捷徑的論證基礎</li>
+</ul>
+<div class="section-label">明確結論</div>
+<p>本專案證實：於雙臂協作場域中，VLA模型確實能透過適當的多語意訓練標籤設計習得語言泛化能力；多任務語言驅動切換是可以被初步驗證觀察到的現象，但現階段尚未達到穩定、高完成率的實用部署水準；此能力的建立存在與動作精細度、任務完成率之間的權衡取捨，且此權衡無法單純透過延長訓練步數解決，反而可能導致語言依賴度不增反減的訓練退化風險。</p>
+<div class="tip">後續工作：完成 GR00T（AB合併版）之完整四組交叉測試；探索改善多任務語言驅動切換穩定性的訓練策略（課程學習、任務平衡取樣、更明確的語意錨定設計）；針對 Multitask DiT 50,000步版本進行更大樣本數的重複測試，提高交叉測試結果的統計可信度。</div>`
+        }
+      }
+    }
+  }
+},
+
+/* ===================== 世界五：VLA Benchmark 效能檢測系統 ===================== */
+vlabench: {
+  label: "VLA Benchmark 效能檢測系統",
+  short: "VLA Benchmark",
+  color: "yellow",
+  desc: "通用 VLA 模型效能檢測工具的完整開發記錄：輸入規格、指標定義、除錯歷程與最終結果分析",
+  categories: {
+
+    overview: {
+      label: "系統概述", icon: "◆", color: "yellow",
+      desc: "工具目的、輸入規格與使用方式",
+      topics: {
+        purpose: {
+          title: "工具目的與設計理念",
+          summary: "給定 checkpoint 與參數設定即可套用於任意模型的效能檢測系統",
+          content: `
+<div class="section-label">目的</div>
+<p>提供一套標準化、可重複使用的效能檢測流程，量化評估任一 Vision-Language-Action（VLA）機器人策略模型在指定硬體上的部署效能。使用者僅需提供模型 checkpoint 與一份設定檔，無需撰寫或修改任何程式碼，即可取得完整、可比較的效能剖面，並自動產出分析圖表與具體的參數設定建議。</p>
+<div class="section-label">用途</div>
+<ul class="step-list">
+<li>內部研發階段比較不同模型架構的部署成本，作為模型選型依據</li>
+<li>未來驗證客戶提供之模型，取得客觀、標準化的效能數據，作為技術評估或報價依據</li>
+</ul>
+<div class="section-label">設計原則：config 驅動，不需碰程式碼</div>
+<p>每個新模型只需要撰寫一份 JSON 設定檔描述模型（checkpoint 路徑、模型類別、觀測格式），即可套用同一套工具，不需要為每個模型另外寫程式。</p>`
+        },
+        input_spec: {
+          title: "輸入規格：JSON 設定檔",
+          summary: "完整欄位說明與範例",
+          content: `
+<div class="section-label">欄位說明</div>
+<table>
+<tr><th>欄位</th><th>型別</th><th>必填</th><th>說明</th></tr>
+<tr><td>model_name</td><td>字串</td><td>是</td><td>模型名稱，用於結果檔案命名與圖表標題</td></tr>
+<tr><td>checkpoint_path</td><td>字串</td><td>是</td><td>模型 checkpoint 路徑（本機路徑或 HuggingFace repo_id）</td></tr>
+<tr><td>module</td><td>字串</td><td>是</td><td>模型類別所在的 Python 模組路徑</td></tr>
+<tr><td>class_name</td><td>字串</td><td>是</td><td>模型類別名稱</td></tr>
+<tr><td>task_text</td><td>字串</td><td>否</td><td>語言指令文字，僅語言條件化模型需要</td></tr>
+<tr><td>observation_spec</td><td>物件</td><td>是</td><td>描述模型輸入格式（影像張數、解析度、狀態維度）</td></tr>
+<tr><td>warmup</td><td>整數</td><td>否</td><td>暖機次數，預設 15</td></tr>
+<tr><td>trials</td><td>整數</td><td>否</td><td>正式量測次數，預設 50</td></tr>
+<tr><td>sweeps</td><td>陣列</td><td>否</td><td>參數掃描清單（如不同動作長度、去噪步數），用於權衡分析</td></tr>
+</table>
+<div class="section-label">完整範例（含參數掃描）</div>
+<pre><code>{
+  "model_name": "GR00T",
+  "checkpoint_path": "/path/to/checkpoint",
+  "module": "lerobot.policies.groot.modeling_groot",
+  "class_name": "GrootPolicy",
+  "task_text": "Right arm hands doll to left arm",
+  "observation_spec": {
+    "observation.state": {"shape": [1, 12]},
+    "observation.images.top": {"shape": [1, 3, 480, 640]}
+  },
+  "sweeps": [
+    {"n_action_steps": 20},
+    {"n_action_steps": 40},
+    {"n_action_steps": 80}
+  ]
+}</code></pre>
+<div class="tip">sweeps 欄位是本工具實現「參數權衡分析」的核心機制——每一組 sweep 會被自動套用到模型設定上，重新載入並測試一次，最終產出跨參數組合的完整效能剖面與對應圖表。若不需要掃描，可省略此欄位，工具會執行單次基本測試。</div>`
+        },
+        usage: {
+          title: "使用方式",
+          summary: "執行指令與輸出結果",
+          content: `
+<div class="section-label">基本執行指令</div>
+<pre><code>python vla_bench_system.py --config &lt;設定檔路徑.json&gt;</code></pre>
+<div class="section-label">輸出</div>
+<ul class="step-list">
+<li>JSON 結果檔：包含全部量化指標的完整數值資料，可供程式化彙整或匯入其他分析工具</li>
+<li>分析圖表（PNG）：權衡熱力圖、延遲縮放趨勢圖，依實際掃描維度自動判斷產出哪些圖</li>
+</ul>
+<div class="warn">執行前務必確認使用正確的 Python 環境（含 LeRobot 及其相依套件），並確認 GPU 資源未被其他行程佔用，否則會出現 CUDA out of memory 錯誤。</div>`
+        }
+      }
+    },
+
+    metrics: {
+      label: "效能指標完整定義", icon: "◆", color: "blue",
+      desc: "十項效能指標的定義、意義與實測案例",
+      topics: {
+        ttfac_inference: {
+          title: "TTFAC 與 Model Inference Latency",
+          summary: "資料前處理耗時 vs 模型真正的運算耗時",
+          content: `
+<div class="section-label">Time to First Action Chunk（TTFAC / Preprocessing）</div>
+<p>定義：從取得原始觀測資料，到轉換為模型所需張量格式（影像編碼、正規化、文字 tokenize）所需時間，此階段尚未進入模型參數運算。</p>
+<p>意義：反映資料前處理管線的效率。若此數值偏高，代表瓶頸在「資料整理」而非「模型思考」，優化方向應著重於減少重複的資料型態轉換，而非調整模型架構本身。</p>
+<div class="section-label">Model Inference Latency</div>
+<p>定義：資料進入模型後，前向傳播運算本身所需時間。</p>
+<div class="warn"><b>實測案例：</b>GR00T 的 Preprocessing 占比一度異常偏高（占 E2E 的 45-70%），經 PyTorch Profiler 定位，根因並非視覺位置編碼運算複雜，而是前處理管線中存在大量（近 130 次）頻繁的資料型態／裝置轉換操作（aten::copy_、aten::to、aten::_to_copy）。詳見「除錯與方法學修正歷程」分類。</div>`
+        },
+        e2e_freq: {
+          title: "E2E Latency 與 Max Control Frequency",
+          summary: "端到端延遲與理論最大控制頻率，須分 Pure／Effective 兩種模式呈現",
+          content: `
+<div class="section-label">End-to-End (E2E) Latency</div>
+<p>定義：E2E = TTFAC + Model Inference Latency，即機器人從「看到當下畫面」到「知道下一步該怎麼動」的總時間。</p>
+<div class="section-label">Maximum Sustainable Control Frequency</div>
+<p>定義：Max Freq (Hz) = 1000 / E2E Latency (ms)，代表模型在閉環控制下理論上能維持的最高更新頻率。</p>
+<p>意義：機器人實務運作通常需要 20-30Hz 以上才能感覺流暢。若模型的 Max Freq 低於此門檻，代表推論速度本身即構成硬體瓶頸。</p>
+<div class="warn"><b>重要提醒：</b>多數 VLA 模型內部具有動作佇列（action queue）快取機制——重新規劃後產生的一批動作會先存起來，後續呼叫優先從佇列查表（極快），直到佇列耗盡才觸發下一次真正推論（慢上數十倍）。這代表「E2E Latency」與「Max Freq」不能只有一個數字，必須拆成 Pure Inference 與 Effective Control 兩種模式分開呈現，否則會產生誤導性的結論。詳見下方定義，完整發現過程見「除錯與方法學修正歷程」。</div>
+<div class="section-label">模式 A：Pure Model Inference（理論下限）</div>
+<p>量測方式：每次呼叫前主動清空動作佇列，強制觸發真正的模型前向運算。</p>
+<p>回答的問題：「若完全不依賴快取機制，模型重新規劃一次動作，最壞需要多久？」</p>
+<p>適用情境：評估模型架構本身的計算負擔上限、跨模型的公平效能比較（不受各自佇列策略差異影響）、佇列機制失效時的效能安全下限估計。</p>
+<div class="section-label">模式 B：Effective Control（實務參考）</div>
+<p>量測方式：保留佇列自然運作（查表與重新規劃交替），取樣本數自動放大至至少涵蓋 3 個完整佇列循環，計算整體平均。</p>
+<p>回答的問題：「實際部署此模型，機器人真正能感受到的平均反應速度是多少？」</p>
+<p>適用情境：評估模型能否滿足特定應用的控制頻率需求、實際部署效能預估。</p>
+<div class="section-label">兩者關係</div>
+<p>兩個數字之間的落差本身即為重要資訊——落差越大，代表該模型的佇列快取機制帶來的效益越顯著。例如 π0 的 Pure Inference（341ms/2.9Hz）與 Effective Control（11ms/89.5Hz）相差約 30 倍，顯示其佇列機制設計對實際部署效能有決定性貢獻；若僅呈現其中一個數字，將無法完整反映此架構特性。</p>
+<div class="tip">實測對照：ACT 的 Pure/Effective 比值約 9.4 倍（佇列效益顯著但非必要，因 Pure 本身已很快）；π0 約 30.6 倍（佇列機制決定其能否實務部署）；GR00T 約 6.6 倍；Diffusion Policy 約 7.1 倍。完整數據見「最終結果分析」分類。</div>`
+        },
+        throughput: {
+          title: "Generated Action Throughput",
+          summary: "動作產出效率，同樣需區分 Pure 與 Effective 兩種版本",
+          content: `
+<div class="section-label">定義</div>
+<p>R_generated = H / t_infer = H × f_query（單位：actions/s），其中 H 為動作區塊長度（Horizon）。</p>
+<div class="section-label">意義</div>
+<p>此指標同時考量「多快能問一次模型」與「一次能拿到幾步動作」，反映模型實際的動作產出效率，比單純的控制頻率更能呈現動作長度增加帶來的真實產出效益。</p>
+<div class="section-label">同樣需要拆成兩個版本</div>
+<p>由於 f_query（也就是 Max Freq）本身分為 Pure 與 Effective 兩種，Generated Action Throughput 也應對應計算出兩個版本：</p>
+<pre><code>Pure Throughput      = Horizon × Pure Max Freq       （保守估計，理論下限）
+Effective Throughput = Horizon × Effective Max Freq  （樂觀／實務估計）</code></pre>
+<p>例如 ACT 的 Max Freq 並非最極端的亮點，但其規模小、Horizon 高，動作產出效率（Pure: 2,689 actions/s，Effective: 25,118 actions/s）遠超其餘所有模型；完整四模型對照表見「最終結果分析」分類。</p>`
+        },
+        power_memory: {
+          title: "Power 與 GPU Memory",
+          summary: "功耗與記憶體用量",
+          content: `
+<div class="section-label">Power（功耗）</div>
+<p>定義：推論過程中的平均與尖峰 GPU 功耗（瓦特）。</p>
+<p>意義：直接影響邊緣裝置散熱設計、電池續航與長期營運電費，是模型能否部署於資源受限裝置的關鍵限制。實測顯示功耗與模型參數量無顯著相關性（加入迭代式架構後 Pearson r 降至 -0.458），主要受運算負載型態影響。</p>
+<div class="section-label">GPU Memory</div>
+<p>定義：推論過程中的平均與尖峰 GPU 記憶體用量，直接決定該模型能否在特定硬體規格上運行。</p>`
+        },
+        cold_start: {
+          title: "Cold Start Time（冷啟動時間）",
+          summary: "模組匯入、權重讀取、搬移至GPU三階段拆解",
+          content: `
+<div class="section-label">定義</div>
+<p>拆解為三個階段：module_import_s（Python 模組匯入）、checkpoint_load_s（權重讀取）、move_to_gpu_s（搬移至 GPU）。</p>
+<div class="section-label">關鍵發現</div>
+<ul class="step-list">
+<li>module_import_s（約 4.66 秒）僅在同一 Python 行程首次執行時發生，若服務架構採用長駐行程並在其中切換不同 checkpoint，此項成本只需支付一次</li>
+<li>π0 的 checkpoint 讀取時間（111.77 秒）遠高於同量級的 GR00T（10.74 秒），顯示大型模型的權重讀取效率也應納入部署成本評估，不能僅看推論速度</li>
+</ul>`
+        },
+        param_breakdown: {
+          title: "參數量拆解（Param Breakdown）",
+          summary: "三種模型呈現三種截然不同的設計哲學",
+          content: `
+<div class="section-label">ACT — 多模組協作型</div>
+<table>
+<tr><th>子模組</th><th>參數量 (M)</th><th>角色</th></tr>
+<tr><td>vae_encoder</td><td>17.33</td><td>訓練時建模示範動作變異性</td></tr>
+<tr><td>encoder</td><td>17.33</td><td>Transformer 編碼器</td></tr>
+<tr><td>backbone</td><td>11.17</td><td>視覺特徵提取</td></tr>
+<tr><td>decoder</td><td>5.39</td><td>動作序列解碼</td></tr>
+<tr><td>action_head</td><td>0.006</td><td>最終輸出層，極小</td></tr>
+</table>
+<div class="section-label">GR00T — 骨幹/動作頭均衡型</div>
+<table>
+<tr><th>子模組</th><th>參數量 (M)</th><th>占比</th></tr>
+<tr><td>backbone（視覺語言骨幹）</td><td>1523.50</td><td>48.5%</td></tr>
+<tr><td>action_head（擴散動作頭）</td><td>1620.52</td><td>51.5%</td></tr>
+</table>
+<div class="section-label">π0 — 骨幹融合型</div>
+<table>
+<tr><th>子模組</th><th>參數量 (M)</th><th>占比</th></tr>
+<tr><td>paligemma_with_expert（骨幹+動作專家融合）</td><td>4024.77</td><td>99.92%</td></tr>
+<tr><td>其餘動作相關投影層</td><td>3.25</td><td>0.08%</td></tr>
+</table>
+<div class="tip">π0 的「動作專家」並非獨立模組，而是與 PaliGemma 視覺語言骨幹的注意力機制深度融合為單一結構，僅有少量投影層獨立於外。並非所有 VLA 模型都能被乾淨地拆解為「骨幹」與「動作頭」兩塊，架構設計本身即為重要的分析對象。</div>
+<div class="warn">參數量分布與 Preprocessing（TTFAC）占比高低並無直接因果關係——前者反映模型內部運算資源配置，後者反映資料前處理管線在模型參數運算「之前」的效率，兩者應分開解讀。</div>`
+        }
+      }
+    },
+
+    debugging: {
+      label: "除錯與方法學修正歷程", icon: "◆", color: "orange",
+      desc: "從錯誤假設到找出真正根因的完整調查過程",
+      topics: {
+        groot_preprocessing_anomaly: {
+          title: "GR00T Preprocessing 異常根因分析",
+          summary: "Profiler 找到真正瓶頸：資料型態轉換，不是位置編碼運算",
+          content: `
+<div class="section-label">異常發現</div>
+<p>八模型效能比較中，除 GR00T 外，其餘模型的 Preprocessing 占比皆低於 21%，唯獨 GR00T 的 Preprocessing 時間幾乎與 Inference 時間相當，占整體 E2E 的 45-70%。</p>
+<div class="section-label">原始假設（後來被推翻）</div>
+<p>最初假設是 GR00T 的視覺時序編碼與空間位置編碼運算本身造成 Preprocessing 偏重。</p>
+<div class="section-label">Profiler 實測結果</div>
+<pre><code>Self CUDA time total: 361.046us（GPU純運算時間極小）
+Self CPU time total: 4.691ms
+
+耗時前三名：
+aten::copy_       35.50% CPU time，37次呼叫
+aten::to          32.78%，60次呼叫
+aten::_to_copy    31.18%，33次呼叫
+（影像縮放運算 aten::_upsample_bicubic2d_aa 僅占 2.69%）</code></pre>
+<div class="warn"><b>真正根因：</b>Preprocessor 內部存在大量（近130次）頻繁的資料型態／裝置轉換操作，而非模型架構的計算複雜度所致。此發現推翻了原始假設，證實效能瓶頸的定位需要看「相對占比」並透過 Profiler 找出確切耗時運算子，而非單純推測。</div>`
+        },
+        action_chunk_elbow: {
+          title: "效能拐點現象初步發現",
+          summary: "陡降後平原：動作長度低於訓練配置時的懲罰",
+          content: `
+<div class="section-label">現象</div>
+<p>對 GR00T 進行 n_action_steps=10 至 100 的延伸掃描，發現延遲曲線呈現「陡降後平原」形狀：n=10 時 82ms，n=20 時 63.5ms，n=40 起進入平原區（約29-32ms），且拐點位置（n=40）與模型訓練配置值精確吻合。</p>
+<div class="section-label">當時的假設</div>
+<p>推測為 RTC（Real-Time Chunking）補償機制——當請求長度低於訓練配置值時，模型需要額外的零值填充與形狀調整，此額外運算成本超過縮短動作長度節省的運算量。</p>
+<div class="tip">此假設後來被證實是錯誤的（見「動作佇列快取機制的發現」），但原始碼追查過程本身仍有其獨立價值，詳見「底層常數追查」章節。</div>`
+        },
+        autoregressive_vs_diffusion: {
+          title: "自迴歸 vs 一次性生成的架構釐清",
+          summary: "修正「平原現象為擴散式生成機制特有」的假設",
+          content: `
+<div class="section-label">原始假設</div>
+<p>認為「陡降後平原」現象是擴散式生成機制（GR00T採用）特有。為驗證，對 ACT（CVAE回歸式架構）進行相同範圍延伸掃描作為對照。</p>
+<div class="section-label">意外結果</div>
+<p>ACT 呈現與 GR00T 相似的曲線形狀（陡降後平原），而非官方 VLA-Perf 基準中「Autoregressive」曲線應有的持續線性增長。</p>
+<div class="section-label">修正後的正確理解</div>
+<ul class="step-list">
+<li>官方基準中「Autoregressive」指涉逐步生成單一動作 token（如OpenVLA）、需重複呼叫模型N次的架構</li>
+<li>ACT 雖名稱含「動作分塊」，實際生成機制是一次前向傳播直接輸出整段動作序列，與GR00T同屬「一次性平行輸出」範疇，僅底層運算方式不同</li>
+<li>本專案六個模型皆屬一次性生成家族，未涵蓋真正逐步自迴歸架構，因此都不會呈現官方基準中Autoregressive應有的持續陡升趨勢</li>
+</ul>`
+        },
+        action_horizon_archaeology: {
+          title: "底層常數追查：三次失敗到成功修改",
+          summary: "N1_7_NATIVE_ACTION_HORIZON 的完整定位過程",
+          content: `
+<div class="section-label">驗證：訓練配置是否決定拐點</div>
+<p>訓練 horizon=20 與 horizon=80 兩個對照版本，延伸掃描結果顯示兩者最低延遲區間皆穩定落在 n=40-60 附近，並未如假設隨訓練配置值同步移動，推翻原始假設。</p>
+<div class="section-label">逐層原始碼追查（三次嘗試）</div>
+<ol class="step-list">
+<li><b>第一次：</b>修改 groot_n1_7.py 的 GR00T_N1_7_DEFAULTS 預設字典 → 驗證顯示未生效（後來發現是查詢了錯誤的物件屬性）</li>
+<li><b>第二次：</b>修改 configuration_groot.py 的 <code>or 40</code> 後備邏輯 → 該路徑在本專案訓練情境下並未被實際呼叫</li>
+<li><b>第三次：</b>修改 processor_groot.py 第105行 <code>N1_7_NATIVE_ACTION_HORIZON = 40</code> → 最終確認為真正唯一源頭，此常數被至少5處程式碼引用</li>
+</ol>
+<pre><code># processor_groot.py 第105行（真正源頭）
+N1_7_NATIVE_ACTION_HORIZON = 40
+
+# 決定最終使用長度的關鍵邏輯
+action_horizon = (
+    checkpoint_assets.max_action_horizon
+    if checkpoint_assets is not None and checkpoint_assets.max_action_horizon is not None
+    else min(config.chunk_size, N1_7_NATIVE_ACTION_HORIZON)
+)</code></pre>
+<div class="warn"><b>驗證方式的教訓：</b>前兩次修改被誤判為「未生效」，根本原因是驗證腳本查詢了錯誤的物件（誤查模型本體 _groot_model，而非前處理管線內部持有此屬性的 GrootN17PackInputsStep 處理器）。改查正確物件後，確認第三次修改真正生效（action_horizon: 80）。</div>
+<div class="section-label">已測試但確認不可行的低成本方案</div>
+<p>嘗試透過 <code>--policy.action_horizon=80</code> 作為獨立參數傳入訓練指令，結果 LeRobot 封裝層的 GrootConfig 並未暴露此欄位（報錯：field not valid），證實此常數無法透過標準微調介面覆寫，須直接修改原始碼。</p>`
+        },
+        queue_cache_discovery: {
+          title: "★ 最關鍵的修正：動作佇列快取機制的發現",
+          summary: "推翻RTC假設，找到造成陡降曲線的真正根因",
+          content: `
+<div class="section-label">矛盾的起點</div>
+<p>同事提出關鍵疑問：若「請求長度低於action_horizon即觸發RTC補償」成立，n=40（低於當時新設定的action_horizon=80）理應與n=20同樣受懲罰，但實測n=40始終正常。此矛盾促使團隊直接以程式碼驗證，而非提出事後合理化解釋。</p>
+<div class="section-label">直接驗證：RTC是否真的被觸發</div>
+<pre><code>n_action_steps=20 → groot_options is None (走標準路徑): True
+n_action_steps=40 → groot_options is None (走標準路徑): True
+n_action_steps=60 → groot_options is None (走標準路徑): True
+n_action_steps=80 → groot_options is None (走標準路徑): True</code></pre>
+<p>結果：四組設定下RTC補償機制自始至終未被觸發！這代表先前「陡降曲線源於RTC補償」的核心假設完全錯誤。</p>
+<div class="section-label">真正原因：連續呼叫30次的逐次記錄</div>
+<pre><code>n_action_steps=20 前30次呼叫耗時（節錄）：
+745.68ms, 3.31, 2.80, ... (17次查表), 130.49ms（第20次）, 3.29, ...
+（每隔約20次，等於n_action_steps，出現一次高峰）
+
+n_action_steps=40：
+175.11ms, 3.37, 2.77, ...（30次內未再出現高峰，佇列撐得更久）</code></pre>
+<div class="warn"><b>真正機制：</b>GrootPolicy 內部維護一個動作佇列（action queue）：每次「真正重新規劃」後產生一批動作存入佇列，後續呼叫優先從佇列查表（約3ms），直到佇列耗盡才觸發下一次真正推論（100ms以上）。先前「連續呼叫N次取統計平均」的量測方法，混雜了「查表」與「真正推論」兩種耗時相差數十倍的樣本，且比例隨n_action_steps系統性變化，這才是造成陡降曲線的真正根源——不是RTC補償，不是底層架構限制。</div>
+<div class="tip">方法學教訓：即使原始碼層級的架構調查完整且結論正確（N1_7_NATIVE_ACTION_HORIZON常數確實存在並成功修改），若量測方法本身混雜不同性質的樣本，仍可能導致對「現象成因」的錯誤歸因。面對與理論預期矛盾的現象，應優先透過直接的程式行為驗證，而非僅依賴聚合統計量做因果推論。</div>`
+        },
+        dual_mode_design: {
+          title: "雙延遲模式設計",
+          summary: "Pure Model Inference 與 Effective Control 分開呈現",
+          content: `
+<div class="section-label">背景</div>
+<p>修正佇列問題後，重新測得的Max Freq降至6.9Hz左右，同事對此提出合理質疑：這個頻率太低，不像機器人正常運作該有的樣子。</p>
+<div class="section-label">關鍵認知：兩種頻率回答不同問題</div>
+<table>
+<tr><th>模式</th><th>量測方式</th><th>回答的問題</th></tr>
+<tr><td>Pure Model Inference</td><td>每次呼叫前強制清空佇列</td><td>完全不依賴快取時，模型重新規劃一次最壞需要多久？（理論下限）</td></tr>
+<tr><td>Effective Control</td><td>保留佇列自然運作，樣本數自動放大至涵蓋3個完整循環</td><td>實際部署時，機器人真正能感受到的平均反應速度？（實務參考）</td></tr>
+</table>
+<div class="tip">兩個數字之間的落差本身即為重要資訊——落差越大，代表該模型的佇列快取機制帶來的效益越顯著。例如π0的Pure/Effective比值高達30.6倍，代表佇列機制的存在使其從「理論上不可部署」轉變為「實務上高度可用」。不應只呈現其中一個數字。</div>`
+        },
+        diffusion_queue_bug: {
+          title: "Diffusion Policy 的佇列命名陷阱",
+          summary: "字典型佇列（_queues）與單一佇列（_action_queue）的差異",
+          content: `
+<div class="section-label">異常發現</div>
+<p>重測 Diffusion Policy 時，pure_inference 的標準差（167ms）遠大於平均值（62-72ms），明顯不正常。</p>
+<div class="section-label">連續呼叫60次定位規律</div>
+<pre><code>第16次: 495.15ms &lt;-- 異常
+第17-23次: 0.02-0.33ms
+第24次: 500.14ms &lt;-- 異常
+（每隔8次，等於n_action_steps=8，出現一次約500ms高峰）</code></pre>
+<div class="section-label">根因</div>
+<p>Diffusion Policy 確實有佇列機制，但屬性命名為 <code>_queues</code>（字典型，內含 observation.state / action / observation.images 三個獨立deque），而非先前檢測邏輯支援的 <code>_action_queue</code>（單一deque）命名，導致被誤判為「無佇列機制」。</p>
+<div class="warn">修正工具同時支援兩種命名模式後，重新測試標準差降至7.7ms，確認乾淨。此案例顯示：不同模型的佇列快取實作方式可能不同，量測工具需要涵蓋多種常見命名模式，且應以「標準差是否遠大於平均值」作為自動警訊指標。</div>`
+        }
+      }
+    },
+
+    results: {
+      label: "最終結果分析", icon: "◆", color: "pink",
+      desc: "四模型公平比較的最終、乾淨結果",
+      topics: {
+        four_model_comparison: {
+          title: "四模型公平比較最終結果",
+          summary: "ACT、π0、GR00T、Diffusion Policy 統一方法論下的比較",
+          content: `
+<p>以下數據皆使用最終修正版工具（強制清空佇列，同時輸出雙模式）測得。ACT、π0、GR00T 統一採用 n_action_steps=40（GR00T之原生訓練配置值）以利公平比較；Diffusion Policy 採用其訓練時之預設值 n_action_steps=8。</p>
+<table>
+<tr><th>模型</th><th>Horizon</th><th>Pure Latency</th><th>Pure Freq</th><th>Effective Latency</th><th>Effective Freq</th><th>Size</th></tr>
+<tr><td>ACT</td><td>40</td><td>14.88 ms</td><td>67.22 Hz</td><td>1.59 ms</td><td>627.96 Hz</td><td>0.052B</td></tr>
+<tr><td>π0</td><td>40</td><td>341.25 ms</td><td>2.93 Hz</td><td>11.17 ms</td><td>89.53 Hz</td><td>4.03B</td></tr>
+<tr><td>GR00T</td><td>40</td><td>151.56 ms</td><td>6.60 Hz</td><td>23.05 ms</td><td>43.39 Hz</td><td>3.14B</td></tr>
+<tr><td>Diffusion Policy</td><td>8</td><td>496.61 ms</td><td>2.01 Hz</td><td>69.62 ms</td><td>14.36 Hz</td><td>0.271B</td></tr>
+</table>
+<div class="section-label">Generated Action Throughput</div>
+<table>
+<tr><th>模型</th><th>Pure (actions/s)</th><th>Effective (actions/s)</th></tr>
+<tr><td>ACT</td><td>2,688.99</td><td>25,118.32</td></tr>
+<tr><td>π0</td><td>117.22</td><td>3,581.29</td></tr>
+<tr><td>GR00T</td><td>263.93</td><td>1,735.56</td></tr>
+<tr><td>Diffusion Policy</td><td>16.11</td><td>114.90</td></tr>
+</table>`
+        },
+        key_findings: {
+          title: "關鍵發現",
+          summary: "四模型各自的架構特性與部署意義",
+          content: `
+<div class="section-label">ACT：展現最極端的佇列效益比</div>
+<p>Pure/Effective 延遲比達約9.4倍，Effective Frequency高達628Hz，遠超過任何機器人硬體實際所需的控制頻率，證實ACT架構本身的推論速度完全不構成部署瓶頸，佇列機制帶來的效益屬「錦上添花」而非「必要」。</p>
+<div class="section-label">π0：佇列機制具有決定性的部署意義</div>
+<p>Pure Inference頻率僅2.93Hz，若不依賴佇列機制，將完全無法滿足即時控制需求；但Effective Frequency達89.5Hz，代表佇列機制的存在使其從「理論上不可部署」轉變為「實務上高度可用」。評估大型VLA模型的部署可行性時，不能僅看Pure Inference數字。</p>
+<div class="section-label">Diffusion Policy：呈現最保守的效能剖面</div>
+<p>兩種模式下皆為四模型中最慢者，這與其採用多步迭代去噪的動作生成機制一致——即使模型規模不大（0.271B），去噪運算本身的重複特性使其單次推論成本顯著高於其他架構。</p>
+<div class="section-label">佇列效益與架構的關聯</div>
+<table>
+<tr><th>模型</th><th>Pure/Effective 比值</th><th>推論意義</th></tr>
+<tr><td>ACT</td><td>9.4倍</td><td>佇列機制效益顯著但非必要</td></tr>
+<tr><td>π0</td><td>30.6倍</td><td>佇列機制對實務部署具決定性貢獻</td></tr>
+<tr><td>GR00T</td><td>6.6倍</td><td>中等效益，Pure與Effective皆在可用範圍</td></tr>
+<tr><td>Diffusion Policy</td><td>7.1倍</td><td>效益存在但整體仍偏慢，可能仍是部署瓶頸</td></tr>
+</table>`
+        },
+        methodology_lessons: {
+          title: "方法學建議",
+          summary: "本次調查歷程萃取出的可重複使用準則",
+          content: `
+<ul class="step-list">
+<li>進行任何VLA模型效能量測前，應先確認該模型是否具備動作佇列快取機制，並確認佇列的實際屬性命名（不同模型實作可能不同，如單一deque或字典型多重deque）</li>
+<li>若量測工具偵測不到已知佇列屬性名稱，不代表該模型必然無佇列機制，建議以「標準差是否遠大於平均值」作為警訊指標，觸發後續人工排查</li>
+<li>跨模型效能比較時，應同時呈現Pure Inference與Effective Control兩組數字，避免因單一指標選擇而產生誤導性結論</li>
+<li>Effective Control量測的樣本數，應確保至少涵蓋3個完整的佇列循環週期，樣本數不足會導致平均值失真</li>
+<li>當觀察到與理論預期矛盾的現象時，應優先透過直接的程式行為驗證（如逐次記錄呼叫耗時、監測內部函式回傳值），而非僅依賴聚合統計量做因果推論</li>
+<li>效能瓶頸的定位需要看「相對占比」而非「絕對數字」，並透過Profiler找出確切耗時的運算子，而非單純推測</li>
+</ul>
+<div class="tip">本次完整調查過程（自曲線觀測、假設提出、對照實驗設計、逐層原始碼查證，至最終定位真正根因並修正方法論）展現了效能異常分析的系統性方法論。即使最終結論修正了原始假設，過程本身仍完整驗證了本效能檢測工具在深度問題定位上的實用價值。</div>`
+        }
+      }
+    }
+  }
+},
+
+/* ===================== 世界六：AMR 自主定位導航 ===================== */
+amr: {
+  label: "AMR 自主定位導航",
+  short: "AMR 導航",
+  color: "gray",
+  desc: "Isaac Sim × ROS2：感知、SLAM 建圖定位、Nav2 自主導航的完整實作紀錄",
+  categories: {
+
+    overview: {
+      label: "系統概述與架構", icon: "◆", color: "gray",
+      desc: "專案目標、整體資料流架構、機器人資產探索方法論",
+      topics: {
+        purpose: {
+          title: "專案背景與目標",
+          summary: "驗證從感知、SLAM 到自主導航的完整技術鏈路",
+          content: `
+<div class="section-label">目標</div>
+<p>在 Isaac Sim 中建立一套完整的 AMR（Autonomous Mobile Robot）數位孿生系統，驗證從感測器資料擷取、即時定位建圖（SLAM）、到自主導航規劃的完整技術鏈路，作為後續 Sim-to-Real 轉移的基礎驗證平台。</p>
+<div class="section-label">系統需求拆解為三個層次</div>
+<ul class="step-list">
+<li><b>感知層（Perception）</b>：光達（Lidar）、相機（Camera）、慣性測量單元（IMU）的資料擷取與 ROS2 發布</li>
+<li><b>定位建圖層（Localization/Mapping）</b>：以感知層資料建立環境地圖，並在既有地圖中持續定位</li>
+<li><b>導航層（Navigation）</b>：依據地圖與即時定位，規劃並執行從當前位置到目標位置的路徑</li>
+</ul>
+<div class="section-label">開發環境</div>
+<table>
+<tr><th>項目</th><th>內容</th></tr>
+<tr><td>模擬平台</td><td>NVIDIA Isaac Sim 4.5</td></tr>
+<tr><td>ROS 版本</td><td>ROS2 Humble</td></tr>
+<tr><td>SLAM / 導航</td><td>RTAB-Map / Nav2</td></tr>
+<tr><td>機器人平台</td><td>Nova Carter（差速驅動 AMR）</td></tr>
+<tr><td>測試場景</td><td>Simple_Warehouse 倉儲場景</td></tr>
+</table>`
+        },
+        architecture: {
+          title: "系統架構總覽",
+          summary: "整體資料流與純 Lidar SLAM 的關鍵架構決策",
+          content: `
+<div class="section-label">整體資料流</div>
+<pre><code>Isaac Sim（感知層）
+ROS2_clock → ROS2_lidar → ROS2_camera → ROS2_imu → ROS2_odom_tf → ROS2_control
+            │ ROS2 topics（經 ROS2 Bridge）
+            ▼
+pointcloud_to_laserscan（3D → 2D 降維）
+            ▼
+RTAB-Map（SLAM 建圖／定位）：Mapping 模式 ←→ Localization 模式
+            │ /map (OccupancyGrid)
+            ▼
+Nav2（路徑規劃與控制）：global_costmap / local_costmap / planner / controller
+            │ /cmd_vel
+            ▼
+Isaac Sim ROS2_control（驅動輪子）</code></pre>
+<div class="section-label">關鍵架構決策：純 Lidar SLAM，不依賴相機</div>
+<p>專案初期曾嘗試 RGB-D + Lidar 融合的 SLAM 架構，但實測後改為純 2D Lidar 架構。原因：</p>
+<ul class="step-list">
+<li>RGB-D 路徑涉及大量額外變因：相機 Frame ID 對齊、RGB/Depth 時間同步、Render Product 渲染負載</li>
+<li>相機的 ROS2 Camera Helper／Camera Info Helper 節點官方預設 Frame Id 是 sim_camera，與 TF 樹裡實際的 prim 名稱不一致，需額外手動對齊</li>
+<li>純 Lidar 架構把 SLAM 品質的變因收斂到單一參數：3D 點雲降維成 2D 掃描時的「高度切片範圍」，除錯效率顯著提升</li>
+</ul>
+<div class="tip">最終架構：Lidar → pointcloud_to_laserscan 降維 → RTAB-Map（純 2D scan-based SLAM）。</div>
+<div class="section-label">開發環境注意事項</div>
+<table>
+<tr><th>項目</th><th>說明</th></tr>
+<tr><td>Python 環境隔離</td><td>ROS2（Humble）使用 system Python，Isaac Sim 使用自帶 runtime，兩者皆不進 conda，避免 DDS 發現機制與 rclpy import 錯誤</td></tr>
+<tr><td>ROS_DOMAIN_ID</td><td>團隊內約定固定數值，且 Isaac Sim 內 ROS2 Context 節點的 Domain Id 手動填入相同值（不依賴環境變數，因 Isaac Sim process 啟動時讀取的環境變數是啟動當下的舊值）</td></tr>
+<tr><td>網域隔離</td><td>同一內網若無 Domain 隔離，任意機器皆會互相收到彼此的 ROS2 topic，需特別留意</td></tr>
+</table>`
+        },
+        asset_exploration: {
+          title: "機器人資產探索方法論",
+          summary: "不依賴資產名稱先驗假設，實際檢查型別與 API Schema",
+          content: `
+<p>在建立任何 Action Graph 之前，必須先確認機器人 USD 資產裡實際存在哪些可用的感測器與關節結構，不能依賴資產名稱或型號的先驗假設。</p>
+<div class="section-label">USD 基礎概念</div>
+<table>
+<tr><th>概念</th><th>說明</th></tr>
+<tr><td>Stage</td><td>目前開啟場景的合成後最終結果</td></tr>
+<tr><td>Layer</td><td>實際存在硬碟上的 .usd/.usda 檔案，可被 reference/sublayer 疊加</td></tr>
+<tr><td>Prim</td><td>Stage 裡的一個節點（Xform、Mesh、Camera 等型別）</td></tr>
+<tr><td>Applied API Schema</td><td>附加在 Prim 上的功能性屬性（如 RigidBodyAPI、ArticulationRootAPI），型別本身不代表功能，功能是「掛」上去的</td></tr>
+</table>
+<div class="section-label">標準探索流程</div>
+<pre><code>import omni.usd
+from pxr import UsdPhysics, UsdGeom, Usd
+
+stage = omni.usd.get_context().get_stage()
+
+# 完整遞迴列出樹狀結構，建立全貌認知
+def print_full_tree(prim_path, depth=0, max_depth=6):
+    prim = stage.GetPrimAtPath(prim_path)
+    print("  " * depth + f"{prim.GetPath()} - {prim.GetTypeName()}")
+    for child in prim.GetAllChildren():
+        print_full_tree(child.GetPath(), depth + 1, max_depth)
+
+# 篩出真正的 Camera 型別 prim（不依賴名稱）
+cameras = [p.GetPath() for p in Usd.PrimRange(stage.GetPrimAtPath(robot_root))
+           if p.GetTypeName() == "Camera"]
+
+# 找 Articulation Root
+roots = [p.GetPath() for p in stage.Traverse() if p.HasAPI(UsdPhysics.ArticulationRootAPI)]</code></pre>
+<div class="section-label">本專案實際案例（Nova Carter）</div>
+<ul class="step-list">
+<li>資產原生的 chassis_link 底下的 hawk、RPLidar_S2E_02、XT32 等 prim 經型別檢查後確認只是 Xform／Mesh，沒有掛任何感測器 API schema，純粹是外觀佔位，不能直接使用</li>
+<li>手動從 Asset Browser 加入一顆 RealSense D455，確認是完整功能版，內含深度相機、RGB相機、立體視覺相機與內建 IMU</li>
+<li>Lidar 因原生資產無可用感測器，改以 IsaacSensorCreateRtxLidar 指令自建，並用 world→local 座標轉換精確定位</li>
+</ul>
+<div class="warn"><b>關鍵教訓：</b>世界座標不能直接寫入子 prim 的 local transform 欄位，否則父層 transform 會被疊加兩次，造成座標值規律性加倍偏移。座標轉換函式須先取得 parent 的 world-to-local 反矩陣，再與目標世界矩陣相乘。</div>`
+        }
+      }
+    },
+
+    graphs: {
+      label: "六張核心 Action Graph", icon: "◆", color: "blue",
+      desc: "Clock、Odometry+TF、Lidar、Camera、IMU、Control 各自的節點設計",
+      topics: {
+        graph_clock: {
+          title: "Graph 1：ROS2_clock",
+          summary: "發布 /clock，統一所有節點的時間基準",
+          content: `
+<p>目的：發布 /clock，統一所有節點的 timestamp 基準，必須最先建立。</p>
+<table>
+<tr><th>節點</th><th>型別</th></tr>
+<tr><td>On Playback Tick</td><td>omni.graph.action.OnPlaybackTick</td></tr>
+<tr><td>ROS2 Context</td><td>isaacsim.ros2.bridge.ROS2Context</td></tr>
+<tr><td>ROS2 QoS Profile</td><td>isaacsim.ros2.bridge.ROS2QoSProfile</td></tr>
+<tr><td>Isaac Read Simulation Time</td><td>isaacsim.core.nodes.IsaacReadSimulationTime</td></tr>
+<tr><td>ROS2 Publish Clock</td><td>isaacsim.ros2.bridge.ROS2PublishClock</td></tr>
+</table>
+<p>接線：Tick → PublishClock.execIn；Context/QoS/SimTime → PublishClock 對應輸入。</p>
+<div class="section-label">Action Graph 實作畫面</div>
+<iframe src="https://drive.google.com/file/d/1qSbXWOyual2-i_8p3HUszpf6qtV8w9Iv/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        graph_odom_tf: {
+          title: "Graph 2：ROS2_odom_tf（定位地基）",
+          summary: "發布 /odom 與動態/靜態 TF，最容易踩坑的一張圖",
+          content: `
+<p>目的：發布 /odom 數值訊息、動態 TF（odom→base_link）、靜態 TF（車體→各感測器）。</p>
+<table>
+<tr><th>節點</th><th>型別</th><th>作用</th></tr>
+<tr><td>Isaac Compute Odometry Node</td><td>IsaacComputeOdometry</td><td>依 chassis prim 位移計算里程計</td></tr>
+<tr><td>ROS2 Publish Odometry</td><td>ROS2PublishOdometry</td><td>發布 /odom</td></tr>
+<tr><td>ROS2 Publish Raw Transform Tree</td><td>ROS2PublishRawTransformTree</td><td>發布動態TF，吃手動數值輸入</td></tr>
+<tr><td>ROS2 Publish Transform Tree</td><td>ROS2PublishTransformTree</td><td>發布靜態TF，自動走訪 Parent Prim → Target Prims</td></tr>
+</table>
+<div class="warn"><b>本專案實際踩過的坑：</b>ComputeOdom.outputs:position → PublishRawTF.inputs:translation、ComputeOdom.outputs:orientation → PublishRawTF.inputs:rotation 這兩條線若沒接，節點仍會持續執行、發布 identity transform 不會報錯，車體會呈現「定在原地」的假象。靜態 TF 的 Target Prims 必須包含所有感測器 prim（Lidar、Camera、IMU），缺漏會導致對應感測器的 TF 查詢失敗。</div>
+<div class="section-label">Action Graph 實作畫面</div>
+<iframe src="https://drive.google.com/file/d/1IO7BdEikq1_hnpWBgrbaK34u7iT2TzfZ/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        graph_lidar: {
+          title: "Graph 3：ROS2_lidar",
+          summary: "發布 PointCloud2 點雲資料",
+          content: `
+<p>目的：發布 sensor_msgs/PointCloud2。</p>
+<table>
+<tr><th>節點</th><th>型別</th></tr>
+<tr><td>Isaac Run One Simulation Frame</td><td>IsaacRunOneSimulationFrame</td></tr>
+<tr><td>Isaac Create Render Product</td><td>IsaacCreateRenderProduct</td></tr>
+<tr><td>ROS2 RTX Lidar Helper</td><td>ROS2RtxLidarHelper</td></tr>
+</table>
+<div class="tip">Camera Prim 欄位（雖然叫此名稱）填入 Lidar prim 路徑，因 RTX Lidar 底層共用渲染管線機制。發布出來的 frame_id（如 sim_lidar）不一定等於填入的 prim 名稱，需以 ros2 topic echo 實際輸出為準。</div>
+<div class="section-label">Action Graph 實作畫面</div>
+<iframe src="https://drive.google.com/file/d/12XDqlaNGhjVXzOmpZlyaUlUuU3GkMhsC/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        graph_camera: {
+          title: "Graph 4：ROS2_camera",
+          summary: "發布 RGB/Depth 影像與相機內參",
+          content: `
+<p>目的：發布 RGB／Depth 影像與相機內參。</p>
+<table>
+<tr><th>節點</th><th>型別</th></tr>
+<tr><td>ROS2 Camera Helper</td><td>ROS2CameraHelper</td></tr>
+<tr><td>ROS2 Camera Info Helper</td><td>ROS2CameraInfoHelper</td></tr>
+</table>
+<div class="warn"><b>關鍵限制：</b>多顆相機必須各自獨立一個 Isaac Create Render Product，絕不能共用，否則多個 topic 會輸出同一張畫面。Frame Id 官方預設值為 sim_camera，需手動對齊 TF 樹裡實際 prim 名稱。</div>
+<div class="section-label">Action Graph 實作畫面</div>
+<iframe src="https://drive.google.com/file/d/1qxjo4Tar0pKUn6ldgxmHDJJb_NZj9zwN/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        graph_imu: {
+          title: "Graph 5：ROS2_imu",
+          summary: "發布 IMU 訊息，靜止時應驗證重力加速度",
+          content: `
+<table>
+<tr><th>節點</th><th>型別</th></tr>
+<tr><td>Isaac Read IMU Node</td><td>IsaacReadIMU</td></tr>
+<tr><td>ROS2 Publish Imu</td><td>ROS2PublishImu</td></tr>
+</table>
+<div class="tip">IMU Prim 需為真正掛載 IsaacImuSensor schema 的 prim。驗證方式：車體靜止時 linear_acceleration.z ≈ 9.8，其餘軸 ≈ 0。</div>
+<div class="section-label">Action Graph 實作畫面</div>
+<iframe src="https://drive.google.com/file/d/1tc7_YGKS6fZPQyH8OL06NwipSPRV7SML/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        graph_control: {
+          title: "Graph 6：ROS2_control（cmd_vel → 輪子）",
+          summary: "最容易出現隱蔽 bug 的一張圖",
+          content: `
+<table>
+<tr><th>節點</th><th>型別</th></tr>
+<tr><td>ROS2 Subscribe Twist</td><td>ROS2SubscribeTwist</td></tr>
+<tr><td>Differential Controller</td><td>DifferentialController</td></tr>
+<tr><td>Isaac Articulation Controller</td><td>IsaacArticulationController</td></tr>
+</table>
+<div class="section-label">必要參數（皆須實測量取，不可估計）</div>
+<ul class="step-list">
+<li>Wheel Radius：用輪子 bounding box 的 z 軸範圍量測</li>
+<li>Wheel Distance：量測左右輪中心點距離</li>
+<li>Robot Path：必須是帶 PhysicsArticulationRootAPI 的 prim 路徑，絕不能空白</li>
+<li>Joint Names：陣列，順序須與 Differential Controller 輸出的 velocityCommand 陣列順序完全一致（慣例為 [left, right]）</li>
+</ul>
+<div class="warn"><b>本專案實際發生過的隱蔽 bug：</b>兩個 Get Array Index 節點被誤設成同一個 index（皆為0），導致左右輪拿到相同速度指令，車輛表現為方向錯亂或無法轉彎，此類錯誤不會產生任何錯誤訊息，僅能透過逐一列印節點屬性值才能發現。</div>
+<div class="section-label">Action Graph 實作畫面</div>
+<iframe src="https://drive.google.com/file/d/1N-iq61kpqezJ_z3Bq6uURy0t86vYwmCv/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        }
+      }
+    },
+
+    slam_nav: {
+      label: "SLAM 建圖與自主導航實作", icon: "◆", color: "orange",
+      desc: "RTAB-Map 建圖／定位、Nav2 路徑規劃與實測影片",
+      topics: {
+        slam_mapping: {
+          title: "3D 點雲降維與建圖模式",
+          summary: "高度切片範圍的選擇與 loop closure",
+          content: `
+<div class="section-label">3D 點雲降維為 2D LaserScan</div>
+<pre><code>ros2 run pointcloud_to_laserscan pointcloud_to_laserscan_node --ros-args \\
+  -r cloud_in:=/front_3d_lidar/lidar_points -r scan:=/scan_3d \\
+  -p use_sim_time:=true -p target_frame:=chassis_link \\
+  -p min_height:=0.3 -p max_height:=1.5 \\
+  -p angle_min:=-3.14159 -p angle_max:=3.14159 -p angle_increment:=0.01745 \\
+  -p range_min:=0.1 -p range_max:=50.0 -p use_inf:=true</code></pre>
+<p>高度切片範圍的選擇原則：範圍過窄（如僅 0.3~0.7m）僅能截取障礙物局部，輪廓斷續不連貫；範圍過廣則容易混入地面雜訊或懸空物體。實測建議以 0.3~1.5m 為起點，並以 ros2 topic echo /scan_3d --once 檢視 ranges 陣列是否在障礙物附近顯示合理短距離值來校準。</p>
+<div class="section-label">建圖模式（Mapping）</div>
+<pre><code>ros2 launch rtabmap_launch rtabmap.launch.py \\
+    rtabmap_args:="--delete_db_on_start --Grid/Sensor 0 --Grid/3D false --Grid/RangeMax 0" \\
+    depth:=false subscribe_rgb:=false \\
+    subscribe_scan:=true scan_topic:=/scan_3d subscribe_scan_cloud:=false \\
+    odom_topic:=/odom frame_id:=chassis_link approx_sync:=true \\
+    use_sim_time:=true rtabmap_viz:=true \\
+    visual_odometry:=false icp_odometry:=false map_topic:=/map</code></pre>
+<div class="warn">建圖過程須讓車輛完整繞行可通行區域，並刻意繞回起點觸發 loop closure。建圖過程中不可任意中斷重啟——每次不完整的中斷都會在資料庫中留下新的、座標系不連續的 Map ID，混雜多個 Map ID 的資料庫會導致地圖顯示錯位且難以修復，唯一解法是整個重建。正常收工需等待 Console 顯示 "Saving database/long-term memory... done!" 才代表地圖確實寫入完整。</div>
+<div class="section-label">建圖過程實測影片</div>
+<iframe src="https://drive.google.com/file/d/1aUVwFG0yunSex8FasljkpwGEzdDLciW6/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<div class="section-label">RTAB-Map 建圖操作示範</div>
+<iframe src="https://drive.google.com/file/d/1m_hucWzut1a-gvduX9WjtiTKXaUIYVr7/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<div class="section-label">最終完成地圖（倉儲場景，約45m×58m）</div>
+<iframe src="https://drive.google.com/file/d/1UgzQBajY1ikqWkGDzu_Dk0vQClzJi-mL/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>`
+        },
+        slam_localization: {
+          title: "定位模式（Localization）",
+          summary: "延續既有地圖，僅做定位不再更新地圖",
+          content: `
+<pre><code>ros2 launch rtabmap_launch rtabmap.launch.py \\
+    localization:=true \\
+    rtabmap_args:="--Grid/Sensor 0 --Grid/3D false --Grid/RangeMax 0" \\
+    depth:=false subscribe_rgb:=false \\
+    subscribe_scan:=true scan_topic:=/scan_3d subscribe_scan_cloud:=false \\
+    odom_topic:=/odom frame_id:=chassis_link approx_sync:=true \\
+    use_sim_time:=true rtabmap_viz:=true \\
+    visual_odometry:=false icp_odometry:=false map_topic:=/map</code></pre>
+<p>唯一差異：加入 localization:=true，不加 --delete_db_on_start（延續使用既有地圖）。啟動後須確認 ros2 param get /rtabmap/rtabmap Mem/IncrementalMemory 為 false。</p>
+<div class="tip"><b>初始定位收斂判斷：</b>ros2 topic echo /rtabmap/localization_pose 的 covariance 值——正常應為小數值（如 0.01~0.5），出現 9999.0 代表完全未收斂。若未收斂，需以 Rviz2 的 2D Pose Estimate 或手動發布 initialpose 給予接近真實位置的初始猜測強制收斂。</div>`
+        },
+        nav2_setup: {
+          title: "Nav2 設定與啟動",
+          summary: "Base Frame 對齊與地圖 Topic 對齊（本專案除錯耗時最久的問題）",
+          content: `
+<div class="section-label">Base Frame 名稱對齊</div>
+<p>Nav2 官方預設 params 檔案中所有位置皆假設 base frame 名稱為 base_link，須依實際系統設定全域取代：</p>
+<pre><code>cp /opt/ros/humble/share/nav2_bringup/params/nav2_params.yaml ~/nav2_params_custom.yaml
+sed -i 's/base_link/chassis_link/g' ~/nav2_params_custom.yaml</code></pre>
+<div class="warn"><b>地圖 Topic 對齊（本專案除錯耗時最久的問題）：</b>RTAB-Map 與 Nav2 的 map_topic 參數必須完全一致的字串，否則 ros2 topic info /map -v 會顯示 Publisher count: 0，Nav2 的 costmap 會卡在極小的初始化預設尺寸（如 4.98×4.98 公尺），且車體會被持續判定為「out of bounds」。此現象容易被誤判為定位或地圖本身的問題，實際上只是兩端 topic 命名不一致。</div>
+<div class="section-label">啟動</div>
+<pre><code>ros2 launch nav2_bringup navigation_launch.py \\
+    use_sim_time:=true \\
+    params_file:=/home/dododog/nav2_params_custom.yaml</code></pre>
+<p>待 Console 顯示 "Managed nodes are active" 代表所有 lifecycle node 成功啟動。</p>`
+        },
+        nav2_test: {
+          title: "導航測試與最終成果",
+          summary: "2D Goal Pose 下達目標，全自動路徑規劃並抵達",
+          content: `
+<div class="section-label">驗證項目</div>
+<ul class="step-list">
+<li>/plan topic 生成有效路徑</li>
+<li>/cmd_vel 由 Nav2 controller_server 持續發布（而非手動殘留指令）</li>
+<li>車體實際朝目標移動並能繞過障礙物</li>
+</ul>
+<div class="section-label">定位與導航實測影片</div>
+<iframe src="https://drive.google.com/file/d/1gApklzEftZ0IieA9PGiWOKTldggodPO5/preview" width="100%" height="400" allow="autoplay" style="border-radius:3px;border:1px solid var(--line);"></iframe>
+<div class="tip">於 Rviz2 使用 2D Goal Pose 工具設定目標點後，AMR 全自動完成路徑規劃、避障、抵達目標，/cmd_vel 由 Nav2 自主接管（非手動控制）——代表 Perception → Localization → Navigation → Control 完整閉環驗證成功。</div>`
+        }
+      }
+    },
+
+    debugging: {
+      label: "除錯歷程與關鍵問題", icon: "◆", color: "yellow",
+      desc: "依故障現象整理的完整除錯記錄，與 EKF 感測融合設計",
+      topics: {
+        debug_table: {
+          title: "除錯歷程總表",
+          summary: "依故障現象、根本原因、解決方式整理",
+          content: `
+<table>
+<tr><th>現象</th><th>根本原因</th><th>解決方式</th></tr>
+<tr><td>車子完全不動</td><td>Get Array Index 索引重複；Articulation Controller 的 robotPath 為空字串；手動殘留 targetVelocity 值與 Action Graph 命令衝突</td><td>逐一列印節點屬性值核對；確認 Robot Path 非空；歸零手動殘留設定</td></tr>
+<tr><td>車體被判定「定在原地」</td><td>Compute Odometry 的輸出未接到 Raw Transform Tree 的 translation/rotation 輸入</td><td>補上該兩條連線</td></tr>
+<tr><td>TF 報 frame does not exist</td><td>Camera/Lidar Helper 節點的 Frame Id 欄位與 TF 樹裡的 child_frame_id 是兩套獨立設定，未手動對齊</td><td>用實際 ros2 topic echo 輸出核對兩者，手動改一致</td></tr>
+<tr><td>/map 或 costmap Publisher count: 0</td><td>RTAB-Map 與 Nav2 兩端 map_topic 參數不一致</td><td>統一兩端字串</td></tr>
+<tr><td>Costmap 邊界異常（如 4.98×4.98）</td><td>同上，/map 未對齊導致 costmap 卡在初始化預設值</td><td>同上</td></tr>
+<tr><td>localization_pose covariance 持續 9999</td><td>定位從未收斂，通常因初始猜測與地圖差異過大，或當前區域掃描特徵不足</td><td>靠近特徵豐富區域重新以 2D Pose Estimate 強制收斂</td></tr>
+<tr><td>地圖顯示錯位、持續跳動</td><td>資料庫因多次中斷重啟混雜了多個不連續 Map ID</td><td>確認後捨棄重建；或誤用 mapping 模式做導航（loop closure 持續優化地圖導致座標失準），改用 localization 模式</td></tr>
+<tr><td>Isaac Sim 無預警 Segmentation fault</td><td>Console 顯示 Duplicate joint name 'FixedJoint'，疑似機器人資產本身命名重複的 joint 觸發底層記憶體問題</td><td>重啟後確認場景與 Action Graph 存檔完整；列為待根治的資產結構問題</td></tr>
+<tr><td>Camera/Lidar topic 頻率不穩定</td><td>GPU 渲染負載過重，非 Graph 邏輯問題</td><td>先確認 /clock 本身是否同樣不穩定以排除系統性負載問題；切換輕量渲染模式</td></tr>
+<tr><td>鍵盤遙控無反應</td><td>Isaac Sim 全螢幕 3D 應用程式攔截系統層級鍵盤事件</td><td>改用 ros2 topic pub -1 手動分段指令或自動巡邏腳本</td></tr>
+</table>`
+        },
+        ekf_design: {
+          title: "里程計感測融合（EKF）設計",
+          summary: "分層架構規劃，尚待實測驗證",
+          content: `
+<p>為提升 sim-to-real 轉移後的里程計穩健度，規劃導入 robot_localization 套件進行感測融合。</p>
+<div class="section-label">分層架構</div>
+<p>EKF #1（局部）僅融合連續、高頻的來源（wheel odometry + IMU），輸出 /odometry/filtered 供下游平滑使用；若 SLAM 系統本身已管理 map→odom TF，則不額外疊加 EKF #2，避免重複處理絕對定位修正造成的跳動。</p>
+<div class="tip"><b>判斷準則：</b>純模擬、地面平坦、輪子不打滑的環境可暫緩此步驟；準備 sim-to-real 轉移或平台里程計雜訊明顯時建議導入。</div>
+<div class="warn">EKF 非萬用解法——若定位發散根因為掃描特徵不足，融合里程計無法解決 SLAM 比對階段的問題。</div>`
+        }
+      }
+    },
+
+    results: {
+      label: "里程碑與未來工作", icon: "◆", color: "pink",
+      desc: "達成之驗收標準、已知限制、指令速查表",
+      topics: {
+        milestones: {
+          title: "達成之里程碑",
+          summary: "Perception → Localization → Navigation → Control 完整閉環",
+          content: `
+<ul class="step-list">
+<li>六張核心 Action Graph（Clock、Odometry+TF、Lidar、Camera、IMU、Control）皆通過分層驗證（Topic 存在性、健康度、節點屬性即時值、物理層驗證）</li>
+<li>RTAB-Map 純 2D Lidar SLAM 建圖，Loop closure 正常觸發，地圖累積完整（約 45m×58m 涵蓋整個倉庫場景）</li>
+<li>Localization 模式定位收斂穩定（covariance 恢復正常小數值）</li>
+<li>Nav2 costmap、planner、controller、bt_navigator 等全部 lifecycle node 成功啟動並保持 active</li>
+<li>使用者於 Rviz2 下達 2D Goal Pose，AMR 全自動規劃路徑並抵達目標，/cmd_vel 由 Nav2 自主接管（非手動控制）</li>
+</ul>
+<div class="tip"><b>Milestone 定義達成：</b>Perception → Localization → Navigation → Control 完整閉環驗證成功。</div>`
+        },
+        future_work: {
+          title: "已知限制與未來工作",
+          summary: "Isaac Sim穩定性、邊建圖邊導航、自然語言導航等延伸方向",
+          content: `
+<table>
+<tr><th>項目</th><th>現況</th></tr>
+<tr><td>Isaac Sim 穩定性</td><td>存在因機器人資產重複 joint 命名疑似觸發的偶發 segfault，需進一步根治</td></tr>
+<tr><td>邊建圖邊導航</td><td>可行但地圖會因 loop closure 持續變動，導致導航目標點座標失準，建議採用「探索一段、鞏固一段」的分段策略而非全程即時混合</td></tr>
+<tr><td>EKF 感測融合</td><td>已完成設計規劃，尚未實測驗證對定位穩定度的實際改善幅度</td></tr>
+<tr><td>自然語言導航</td><td>尚待建立「地點名稱→座標」對照表，並串接 Nav2 action client 完成自然語言指令解析</td></tr>
+<tr><td>Sim-to-Real</td><td>尚未進行，本專案僅完成模擬環境內驗證</td></tr>
+</table>`
+        },
+        appendix: {
+          title: "附錄：指令與參數速查表",
+          summary: "環境設定、完整啟動順序、常用驗證指令",
+          content: `
+<div class="section-label">環境設定</div>
+<pre><code>conda deactivate
+source /opt/ros/humble/setup.bash
+echo $ROS_DOMAIN_ID</code></pre>
+<div class="section-label">完整啟動順序</div>
+<pre><code># 1. 點雲降維
+ros2 run pointcloud_to_laserscan pointcloud_to_laserscan_node --ros-args \\
+  -r cloud_in:=/front_3d_lidar/lidar_points -r scan:=/scan_3d \\
+  -p use_sim_time:=true -p target_frame:=chassis_link \\
+  -p min_height:=0.3 -p max_height:=1.5 \\
+  -p angle_min:=-3.14159 -p angle_max:=3.14159 -p angle_increment:=0.01745 \\
+  -p range_min:=0.1 -p range_max:=50.0 -p use_inf:=true
+
+# 2. RTAB-Map（定位模式）
+ros2 launch rtabmap_launch rtabmap.launch.py \\
+    localization:=true \\
+    rtabmap_args:="--Grid/Sensor 0 --Grid/3D false --Grid/RangeMax 0" \\
+    depth:=false subscribe_rgb:=false \\
+    subscribe_scan:=true scan_topic:=/scan_3d subscribe_scan_cloud:=false \\
+    odom_topic:=/odom frame_id:=chassis_link approx_sync:=true \\
+    use_sim_time:=true rtabmap_viz:=true \\
+    visual_odometry:=false icp_odometry:=false map_topic:=/map
+
+# 3. Nav2
+ros2 launch nav2_bringup navigation_launch.py \\
+    use_sim_time:=true params_file:=/home/dododog/nav2_params_custom.yaml</code></pre>
+<div class="section-label">常用驗證指令</div>
+<pre><code>ros2 topic info &lt;topic&gt; -v          # Publisher/Subscription count 是否 ≥1
+ros2 topic hz &lt;topic&gt;                # 頻率健康度
+ros2 topic echo &lt;topic&gt; --once      # 內容合理性
+ros2 run tf2_ros tf2_echo &lt;A&gt; &lt;B&gt;    # TF 是否存在且合理
+ros2 run tf2_tools view_frames        # 完整 TF 樹視覺化
+ros2 node info &lt;node&gt;                # 完整訂閱/發布清單
+ros2 param get &lt;node&gt; &lt;param&gt;        # 確認實際生效參數值</code></pre>`
+        }
+      }
+    }
+  }
+},
+
+/* ===================== 世界七：Isaac Sim Agent ===================== */
+isaacagent: {
+  label: "Isaac Sim Agent",
+  short: "Isaac Agent",
+  color: "blue",
+  desc: "自然語言驅動的 Isaac Sim 數位孿生建置與導航系統：架構、工具、除錯歷程與泛化目標",
+  categories: {
+
+    overview: {
+      label: "目標與架構", icon: "◆", color: "blue",
+      desc: "專案目標、四層系統架構、檔案結構",
+      topics: {
+        goal: {
+          title: "專案目標",
+          summary: "用自然語言驅動 Isaac Sim 完成三類工作",
+          content: `
+<div class="section-label">目標</div>
+<p>讓使用者用自然語言（中文/英文皆可）驅動 NVIDIA Isaac Sim，完成以下三類工作，而不需要手動點滑鼠拉節點、或親自撰寫 USD/OmniGraph 程式碼：</p>
+<ul class="step-list">
+<li><b>場景與機器人建置</b>：建立物件、匯入完整機器人資產、設定材質與物理屬性、建立關節與驅動</li>
+<li><b>ROS2 感測器/控制 Action Graph</b>：Clock、Odometry、Lidar、Camera、IMU、差速控制，六張標準圖一鍵生成</li>
+<li><b>SLAM + Nav2 自主導航</b>：建圖、定位、路徑規劃，最終達成「說一個地點，車子自己開過去」的完整閉環</li>
+</ul>
+<div class="section-label">核心設計理念：參數化範本工具優先於自由生成程式碼</div>
+<p>每一個工具背後都是驗證過的固定邏輯，語言模型只負責判斷該用哪個工具、填對參數，而不是自己現場編寫 Isaac Sim API 呼叫。</p>
+<div class="warn">這個選擇是實測後得到的結論：自由生成程式碼時，語言模型經常編造不存在的 API 名稱或型別字串（幻覺），而固定範本工具的失敗率遠低於此。</div>`
+        },
+        architecture: {
+          title: "系統架構：大腦、手、橋樑、身體",
+          summary: "四層架構設計，與選用 Qwen3 8B 的理由",
+          content: `
+<div class="section-label">四層架構</div>
+<pre><code>你打指令（中文或英文）
+    │
+【大腦】伺服器上的 Ollama + Qwen3 8B
+    │ 判斷該呼叫哪個工具、填什麼參數
+    ▼
+【手】isaac_agent.py（本機執行的對話迴圈）
+    │ 透過 TOOL_REGISTRY 動態查詢工具
+    ▼
+【橋樑】isaac-sim-mcp extension，TCP socket 8766
+    │
+    ▼
+【身體】Isaac Sim 本身</code></pre>
+<div class="section-label">為什麼選 Qwen3 8B（自架 Ollama）而非商用 API</div>
+<ul class="step-list">
+<li>免費、不消耗 token</li>
+<li>內網連線穩定，不依賴外部網路，降低期末展示現場斷線的風險</li>
+<li>資料完全留在自己的伺服器上</li>
+</ul>`
+        },
+        file_structure: {
+          title: "檔案結構",
+          summary: "五個核心檔案的分工",
+          content: `
+<table>
+<tr><th>檔案</th><th>用途</th></tr>
+<tr><td>isaac_client.py</td><td>底層 socket 通訊，只負責跟 8766 port 講話，實作可靠的 TCP 串流收發邏輯</td></tr>
+<tr><td>tools.py</td><td>所有工具定義，每個工具是獨立的 class，用 @register_tool 裝飾器自動註冊</td></tr>
+<tr><td>isaac_agent.py</td><td>對話迴圈主程式，透過 TOOL_REGISTRY 動態讀取工具清單，新增工具不需要改這支程式</td></tr>
+<tr><td>build_docs_index.py</td><td>把知識庫文件切段、用 Ollama embedding 模型建立向量索引</td></tr>
+<tr><td>isaac_docs_*.txt/.md</td><td>知識庫內容：官方手冊摘要、踩坑記錄、節點型別速查表</td></tr>
+</table>`
+        }
+      }
+    },
+
+    tools: {
+      label: "完整工具參考（34個）", icon: "◆", color: "yellow",
+      desc: "依類別列出所有已註冊工具的完整參數",
+      topics: {
+        scene_tools: {
+          title: "基礎場景操作",
+          summary: "6個工具：連線確認、物件建立、腳本執行",
+          content: `
+<table>
+<tr><th>工具</th><th>參數</th><th>說明</th></tr>
+<tr><td>get_scene_info</td><td>（無）</td><td>確認連線正常，回傳 pong</td></tr>
+<tr><td>query_scene_state</td><td>（無）</td><td>列出所有物件的 path 與 type name，不可靠路徑名稱猜測時使用</td></tr>
+<tr><td>create_physics_scene</td><td>floor, gravity, scene_name</td><td>建立物理場景</td></tr>
+<tr><td>create_robot</td><td>robot_type, position</td><td>建立簡易機器人佔位符（僅 Xform，非完整資產）</td></tr>
+<tr><td>omni_kit_command</td><td><b>command</b>, <b>prim_type</b>, prim_path</td><td>建立幾何物件，走 execute_script 以支援自訂路徑</td></tr>
+<tr><td>execute_script</td><td><b>code</b></td><td>執行任意 Python 程式碼（最後手段，優先用專用工具）</td></tr>
+</table>`
+        },
+        material_physics_tools: {
+          title: "材質與物理",
+          summary: "3個工具：材質、物理屬性、變換",
+          content: `
+<table>
+<tr><th>工具</th><th>參數</th><th>說明</th></tr>
+<tr><td>create_material</td><td><b>prim_path</b>, color, roughness, metallic, albedo_texture, normal_texture, ao_texture</td><td>套用 OmniPBR 材質</td></tr>
+<tr><td>apply_physics_by_type</td><td><b>prim_path</b>, <b>object_type</b>(static/rigid/hollow/door)</td><td>依類型加物理屬性，static 會主動移除既有 RigidBodyAPI</td></tr>
+<tr><td>set_transform</td><td><b>prim_path</b>, translate, rotate_euler, scale</td><td>設定變換，一律覆蓋（未指定欄位重設為單位值）</td></tr>
+</table>`
+        },
+        asset_joint_tools: {
+          title: "資產匯入與關節",
+          summary: "5個工具：CAD匯入、關節、驅動、量測",
+          content: `
+<table>
+<tr><th>工具</th><th>參數</th><th>說明</th></tr>
+<tr><td>import_cad_asset</td><td><b>file_path</b>, <b>prim_path</b>, scale</td><td>STL/OBJ 匯入，非同步排程，STL 預設縮放 0.001</td></tr>
+<tr><td>reference_isaac_asset</td><td><b>usd_url</b>, <b>prim_path</b>, position</td><td>參照 Isaac Sim 資產庫完整資產（含感測器）</td></tr>
+<tr><td>create_joint_aligned</td><td><b>joint_name</b>, <b>body0_path</b>, <b>body1_path</b>, <b>joint_type</b>, axis, lower_limit, upper_limit</td><td>建立 revolute/prismatic/fixed 關節</td></tr>
+<tr><td>set_joint_drive</td><td><b>joint_path</b>, <b>drive_type</b>, target_position, target_velocity, stiffness, damping, max_force</td><td>幫關節加驅動（馬達）</td></tr>
+<tr><td>measure_wheel_geometry</td><td><b>left_wheel_path</b>, <b>right_wheel_path</b></td><td>實測輪徑與輪距（bounding box 量測），不用猜的數字</td></tr>
+</table>`
+        },
+        action_graph_tools: {
+          title: "ROS2 六張標準 Action Graph",
+          summary: "7個工具：六張標準圖 + 一個通用建圖工具",
+          content: `
+<table>
+<tr><th>工具</th><th>必填參數</th><th>選填參數</th></tr>
+<tr><td>create_ros2_clock_graph</td><td>graph_path</td><td>domain_id</td></tr>
+<tr><td>create_ros2_odometry_graph</td><td>graph_path, chassis_prim, child_frame_id</td><td>target_prims, domain_id</td></tr>
+<tr><td>create_ros2_lidar_graph</td><td>graph_path, lidar_prim, topic_name, frame_id</td><td>output_type(point_cloud/laser_scan)</td></tr>
+<tr><td>create_ros2_camera_graph</td><td>graph_path, camera_prim, topic_prefix, frame_id</td><td>include_depth</td></tr>
+<tr><td>create_ros2_imu_graph</td><td>graph_path, imu_prim, topic_name</td><td>domain_id</td></tr>
+<tr><td>create_ros2_differential_control_graph</td><td>graph_path, robot_path, left_wheel_joint, right_wheel_joint, wheel_radius, wheel_distance</td><td>domain_id</td></tr>
+<tr><td>build_action_graph（通用）</td><td>graph_path, nodes</td><td>connections, set_values — 僅供六張標準圖之外的全新圖表使用</td></tr>
+</table>
+<div class="section-label">六張圖底層共用 _build_graph_script() 核心函式，內建三項可靠性機制</div>
+<ul class="step-list">
+<li>建圖前自動呼叫 enable_extension() 確保所需 extension 已載入</li>
+<li>domainId 等時序敏感的屬性，拆成建圖完成後的獨立步驟設定，避免時序衝突</li>
+<li>建圖成功後自動讀回關鍵欄位（如 robotPath 是否為空字串），回應裡直接看得到驗證結果</li>
+</ul>
+<div class="section-label">各圖對應備註</div>
+<table>
+<tr><th>工具</th><th>對應圖</th><th>備註</th></tr>
+<tr><td>create_ros2_clock_graph</td><td>Clock，發布 /clock</td><td>節點與接線寫死，不需指定型別字串</td></tr>
+<tr><td>create_ros2_odometry_graph</td><td>Odometry + TF，發布 /odom 與座標轉換</td><td>chassis_prim 建議先用 inspect_robot_structure 確認</td></tr>
+<tr><td>create_ros2_lidar_graph</td><td>RTX Lidar，發布點雲/掃描</td><td>曾踩過 Ogn 前綴坑，已修正並記入知識庫</td></tr>
+<tr><td>create_ros2_camera_graph</td><td>Camera（RGB + 可選 Depth + Info）</td><td>多顆相機需各自獨立呼叫</td></tr>
+<tr><td>create_ros2_imu_graph</td><td>IMU，發布 sensor_msgs/Imu</td><td>已用真實重力讀數（≈9.8）驗證正確</td></tr>
+<tr><td>create_ros2_differential_control_graph</td><td>差速控制，訂閱 /cmd_vel 驅動輪子</td><td>除錯耗時最久的一張圖，詳見「差速控制圖除錯案例」</td></tr>
+</table>`
+        },
+        diagnostic_tools: {
+          title: "診斷與驗證",
+          summary: "6個工具：結構檢查、圖檢查、知識庫查詢",
+          content: `
+<table>
+<tr><th>工具</th><th>參數</th><th>說明</th></tr>
+<tr><td>inspect_robot_structure</td><td><b>root_path</b></td><td>列出 ArticulationRoot/RigidBody/Joint，純讀取</td></tr>
+<tr><td>inspect_action_graph</td><td>graph_path（不給列出所有圖）</td><td>列出節點屬性值與節點間真實連線（用標準 USD GetConnections()）</td></tr>
+<tr><td>query_isaac_docs</td><td><b>query</b></td><td>查詢本機向量索引知識庫</td></tr>
+<tr><td>find_ogn_node_definition</td><td><b>keyword</b></td><td>搜尋本機 .ogn 定義檔（pip 安裝版通常找不到，僅供完整安裝版參考）</td></tr>
+<tr><td>delete_prim</td><td><b>prim_path</b></td><td>刪除任意路徑物件</td></tr>
+<tr><td>save_stage / load_stage</td><td>save_path（選填）/ <b>usd_path</b></td><td>存檔/載入場景</td></tr>
+</table>`
+        },
+        process_tools: {
+          title: "外部行程管理",
+          summary: "5個工具：SLAM/Nav2/RViz2 背景行程控制",
+          content: `
+<table>
+<tr><th>工具</th><th>參數</th><th>說明</th></tr>
+<tr><td>start_background_process</td><td><b>command</b>, <b>label</b></td><td>啟動不會自己結束的行程，寫入持久化 registry</td></tr>
+<tr><td>check_background_process</td><td><b>pid</b>, <b>label</b>, log_lines</td><td>檢查存活狀態並讀取 log</td></tr>
+<tr><td>stop_background_process</td><td><b>pid</b></td><td>送 SIGINT 優雅關閉，並更新 registry，避免 RTAB-Map 等資料庫損毀</td></tr>
+<tr><td>list_background_processes</td><td>（無）</td><td>讀取 registry.json，列出所有行程與存活狀態（持久化在磁碟，不受重啟影響）</td></tr>
+<tr><td>run_shell_command_blocking</td><td><b>command</b>, timeout（上限10秒）</td><td>一次性查詢指令，同步等待</td></tr>
+</table>`
+        }
+      }
+    },
+
+    usage: {
+      label: "啟動步驟與知識庫", icon: "◆", color: "orange",
+      desc: "五步驟啟動流程與知識庫內容清單",
+      topics: {
+        startup_steps: {
+          title: "啟動步驟",
+          summary: "從伺服器端到 Agent 啟動的完整順序",
+          content: `
+<div class="section-label">Step 1 — 伺服器端（先啟動，保持視窗開著）</div>
+<pre><code>ssh advan@172.17.5.205
+OLLAMA_KEEP_ALIVE=30m OLLAMA_HOST=0.0.0.0:11434 ollama serve</code></pre>
+<div class="section-label">Step 2 — 工作站端：啟動 Isaac Sim 並掛載 extension</div>
+<pre><code>conda activate env_isaacsim_45
+isaacsim --ext-folder ~/isaac-sim-mcp --enable isaac.sim.mcp_extension</code></pre>
+<p>確認終端機出現：「Isaac Sim MCP server started on localhost:8766」</p>
+<div class="section-label">Step 3 — 確認 8766 port 有在監聽</div>
+<pre><code>ss -antp | grep 8766</code></pre>
+<div class="section-label">Step 4 —（如有更新知識庫內容）重建索引</div>
+<pre><code>cd ~/isaac-sim-mcp
+python3 build_docs_index.py</code></pre>
+<div class="section-label">Step 5 — 啟動 Agent</div>
+<pre><code>cd ~/isaac-sim-mcp
+source .venv/bin/activate
+python3 isaac_agent.py</code></pre>
+<div class="tip">啟動畫面會列出目前所有已註冊的工具清單，確認數量與名稱正確，代表最新版程式碼已生效。</div>`
+        },
+        knowledge_base: {
+          title: "知識庫內容清單",
+          summary: "向量索引涵蓋的六份文件與切段邏輯",
+          content: `
+<p>知識庫透過 build_docs_index.py 切段、用 Ollama nomic-embed-text 模型建立向量索引，供 query_isaac_docs 查詢：</p>
+<table>
+<tr><th>檔案</th><th>內容</th></tr>
+<tr><td>isaac_docs_action_graph.txt</td><td>OmniGraph Python 建圖語法（og.Controller.edit 標準寫法）</td></tr>
+<tr><td>isaac_docs_lessons_learned.txt</td><td>踩坑記錄：事件迴圈衝突、變數作用域、Ogn 前綴、物理屬性疊加等</td></tr>
+<tr><td>isaac_sim_action_graph_node_reference.md</td><td>六張標準圖的完整節點型別字串速查表</td></tr>
+<tr><td>isaac_sim_ros2_action_graph_textbook.md</td><td>定位與驗證方法論、USD Layer/Prim/Schema 基礎、Twist 分量拆解等</td></tr>
+<tr><td>slam_navigation_agent_skill.md</td><td>SLAM/Nav2 整合踩坑記錄（EKF、TF 樹、frame_id 驗證方法）</td></tr>
+<tr><td>isaac_docs_nvidia_official_nav2.md</td><td>NVIDIA 官方 Mobile Robot Controllers + ROS2 Navigation 教學摘要</td></tr>
+</table>
+<div class="warn">切段邏輯採用「累積式」切法（而非單純依空行切），修正過一個實測發現的 bug：單獨的標題行若不與後續內容合併，會在多章節重複出現而排擠真正有內容的段落。</div>`
+        }
+      }
+    },
+
+    debugging: {
+      label: "關鍵案例與除錯記錄", icon: "◆", color: "gray",
+      desc: "差速控制圖代表性案例、完整除錯表、已知未解決問題",
+      topics: {
+        differential_control_case: {
+          title: "關鍵案例：差速控制圖的除錯過程",
+          summary: "最能展現「測量、不要用猜的」核心原則的案例",
+          content: `
+<p>這是投入時間最多、也最能展現「測量、不要用猜的」這個核心原則的一個案例。</p>
+<div class="section-label">問題現象</div>
+<p>差速控制圖建立成功（所有欄位驗證通過），但實際送出 /cmd_vel 指令後，車子完全不動。</p>
+<div class="section-label">除錯過程</div>
+<ol class="step-list">
+<li><b>第一層線索：</b>Isaac Sim 主控台出現型別不相容警告——SubTwist 輸出的 linearVelocity（vector3）無法直接接到 DiffController 的純量輸入</li>
+<li><b>查證方式：</b>載入 NVIDIA 官方範例場景（Robotics Examples &gt; ROS2 &gt; Navigation &gt; Carter），用 inspect_action_graph 讀取官方驗證過的差速控制圖真實接線</li>
+<li><b>關鍵發現：</b>向量需要先經過 Break 3-Vector 節點拆解成 x/y/z 分量，才能接到目的地的純量輸入欄位</li>
+<li><b>節點型別字串的驗證方法：</b>不憑印象猜測，而是在 Isaac Sim 的 Script Editor 裡對一個已存在的節點呼叫 node.get_type_name()，取得畫面上顯示名稱背後真正的 Python 型別字串（omni.graph.nodes.BreakVector3）</li>
+<li><b>最終結果：</b>依照官方驗證過的接線結構修正工具，重新建立後，車子確實開始移動</li>
+</ol>
+<div class="tip">這個案例完整體現了整個專案的方法論：遇到不確定的 API 或行為，一律用「查詢官方範例、或直接在環境裡實測驗證」的方式取得答案，不接受「聽起來合理」的猜測。</div>`
+        },
+        debug_log_table: {
+          title: "完整除錯記錄",
+          summary: "依時間順序整理的關鍵問題與解法",
+          content: `
+<table>
+<tr><th>項目</th><th>現象</th><th>根本原因</th><th>解法</th></tr>
+<tr><td>asyncio 衝突</td><td>run_until_complete 拋出 Cannot enter into task 錯誤</td><td>execute_script 跑在已運行的事件迴圈裡，與 Kit 自身衝突</td><td>改用 asyncio.ensure_future() + callback</td></tr>
+<tr><td>殭屍事件迴圈</td><td>asyncio 錯誤後續操作持續異常</td><td>上次失敗留下未清理的 task</td><td>重啟 Isaac Sim</td></tr>
+<tr><td>UnboundLocalError</td><td>函式一開始用 omni 就報錯</td><td>函式內重複 import omni.xxx，使 omni 變成區域變數</td><td>移除函式內重複 import</td></tr>
+<tr><td>TransformPrimSRT 崩潰</td><td>Vec3d(None) 型別錯誤</td><td>translation/rotation/scale 三者須同時提供</td><td>一律補齊三者，預設單位值</td></tr>
+<tr><td>PublishTF 時序不一致</td><td>四個 Publish 節點觸發時機不同步</td><td>PublishTF 誤接 OnTick 而非 ComputeOdom.execOut</td><td>統一改接 ComputeOdom.outputs:execOut</td></tr>
+<tr><td>Ogn 前綴缺失</td><td>unrecognized type 錯誤</td><td>手冊型別字串遺漏 Ogn 前綴（IsaacRunOneSimulationFrame）</td><td>用 get_type_name() 對已存在節點驗證，取得真實字串</td></tr>
+<tr><td>向量型別不相容</td><td>double3 無法接 double 輸入，車不會動</td><td>SubTwist 輸出需先用 Break 3-Vector 拆解分量</td><td>載入官方範例場景，用 inspect_action_graph 驗證正確接線</td></tr>
+<tr><td>domainId 設定失敗</td><td>node=None 屬性查找錯誤</td><td>節點剛建立，同次 SET_VALUES 呼叫時序問題</td><td>拆成建圖後的獨立步驟，失敗不影響整體</td></tr>
+<tr><td>Docker 網段衝突</td><td>無法連線公司內網 172.17.x.x</td><td>Docker 預設 bip 剛好與公司網段重疊</td><td>移除衝突路由，並修改 daemon.json</td></tr>
+<tr><td>Nav2 TF 樹缺 map→odom</td><td>costmap 持續 timeout</td><td>只啟動 navigation_launch.py，未啟動 AMCL 且未設 autostart</td><td>改用 bringup_launch.py 並加 autostart:=true</td></tr>
+<tr><td>base frame 名稱誤用</td><td>canTransform 找不到 chassis_link</td><td>沿用不同場景資產的 base frame 命名</td><td>用 view_frames 或 /odom 的 child_frame_id 重新確認</td></tr>
+<tr><td>8B 模型偶爾不呼叫工具</td><td>改用文字講解，未實際執行動作</td><td>長對話/大量資料污染上下文後的模型局限</td><td>明確在指令裡點出工具名稱；必要時直接手動操作 GUI/Script Editor</td></tr>
+</table>`
+        },
+        known_issues: {
+          title: "已知未解決問題",
+          summary: "map → odom TF 尚未成功建立",
+          content: `
+<div class="warn"><b>誠實記錄一項尚未解決的問題：</b>AMCL 已確認為 active 狀態，/scan topic 有穩定 ~25Hz 資料流動，/initialpose 發布成功且有訂閱者接收，但 map → odom 這條 TF 始終未能建立。</div>
+<div class="section-label">已排除的可能原因</div>
+<ul class="step-list">
+<li>lifecycle 未啟用（已用 autostart:=true 解決）</li>
+<li>殭屍重複節點（已清除確認）</li>
+<li>LaserScan 資料缺失（已用 pointcloud_to_laserscan 補上）</li>
+</ul>
+<div class="section-label">尚待排查方向</div>
+<ul class="step-list">
+<li>初始位置猜測 (0,0,0) 是否落在地圖有效區域內</li>
+<li>AMCL 的雷射掃描比對相關參數（如 laser_min_range/laser_max_range）是否與實際 Lidar 規格相符</li>
+<li>covariance 矩陣設定是否合理</li>
+</ul>
+<div class="tip">建議下一步：直接查看 /amcl 節點的完整 log 輸出（而非只看 lifecycle 狀態），確認它在收到 /initialpose 後是否有嘗試進行掃描比對、以及比對失敗時的具體錯誤訊息。</div>`
+        }
+      }
+    },
+
+    future: {
+      label: "未來發展與泛化目標", icon: "◆", color: "pink",
+      desc: "跨機器人形態的能力泛化、未來規劃、與官方 MCP 的比較計畫",
+      topics: {
+        generalization: {
+          title: "泛化目標：跨機器人形態的能力樹",
+          summary: "從任務理解到不同機器人形態的能力樹狀架構",
+          content: `
+<div class="section-label">目標</div>
+<p>目前這個 Agent 的工具與知識庫，主要是針對輪型 AMR（差速驅動）驗證過。下一步希望讓 Agent 能真正泛化到不同形態的機器人身上，而不是每換一種機器人就要重新設計一套工具。</p>
+<div class="section-label">能力樹狀架構規劃</div>
+<pre><code>                    ISAAC SIM AGENT
+                           │
+                    Task Understanding
+                           │
+                    Robot Capability
+                           │
+        ┌──────────────────┼──────────────────┐
+        ▼                  ▼                  ▼
+     Mobile            Manipulator          Quadruped
+      Robot                Arm
+        │                  │                  │
+   ┌────┴────┐        ┌────┴────┐        ┌────┴────┐
+   ▼         ▼        ▼         ▼        ▼         ▼
+Differential Ackermann Joint   Gripper   ...       ...
+  Drive       Drive   Control</code></pre>
+<div class="section-label">設計理念</div>
+<p>讓 Agent 不是只認得「輪子怎麼轉」，而是先理解「這是什麼類型的機器人（移動平台／機械手臂／四足）」，再依照類型去判斷底層該用哪一套控制邏輯（差速驅動／阿克曼轉向／關節控制／夾爪控制），真正去運用模擬環境提供的底層機制，而不是針對單一機器人寫死工具。</p>
+<div class="warn">目前實際使用下來，仍會遇到一些判斷或執行上的錯誤——這代表泛化到不同機器人形態這件事，還需要更深入理解每種形態底層運作的差異，才能讓工具的判斷更精確、適用範圍更廣，而不是單純把現有工具的參數化程度提高就足夠。</div>`
+        },
+        roadmap: {
+          title: "未來規劃（尚未實作）",
+          summary: "七項具體延伸方向",
+          content: `
+<ul class="step-list">
+<li>URDF → USD 匯入工具（目前只能處理已經是 USD 格式的資產）</li>
+<li>Replicator 域隨機化（材質/場景多樣性的合成資料擴增）</li>
+<li>評估導入 NVIDIA 官方 Isaac Sim MCP Server（語意搜尋知識庫），取代目前手動維護的知識庫</li>
+<li>NuRec（手機拍照 + Gaussian Splatting）場景重建——僅適合視覺化導航場景，不適合需要物理互動的精細操作任務，且需要 Isaac Sim 5.0 以上版本</li>
+<li>完成 map → odom TF 的排查，達成完整的「自然語言 → 導航目標 → 車輛自主移動」閉環</li>
+<li>跨機器人形態的能力泛化（見「泛化目標」章節）</li>
+</ul>`
+        },
+        mcp_comparison: {
+          title: "與 NVIDIA 官方 MCP Server 的比較計畫",
+          summary: "定位差異、五個測試面向、建議整合方式",
+          content: `
+<div class="section-label">定位差異</div>
+<p>NVIDIA 官方已發布 Isaac Sim MCP Server（語意搜尋型）與 nvidia/skills 官方技能庫，設計目標是讓 Claude Code 等 coding agent 對 Isaac Sim 文件/範例有更深理解。這與本專案的架構定位不同——本專案的 isaac_agent.py 是「直接控制 Isaac Sim 執行動作」的 agent，官方 MCP Server 目前偏向「文件語意搜尋輔助」。</p>
+<div class="section-label">建議的測試面向</div>
+<table>
+<tr><th>面向</th><th>測試方法</th></tr>
+<tr><td>節點型別查詢準確度</td><td>同一批曾踩過坑的節點（如 IsaacRunOneSimulationFrame 的 Ogn 前綴問題），分別問本專案的 query_isaac_docs 與官方 MCP Server，比對答案是否正確</td></tr>
+<tr><td>六張標準圖生成正確性</td><td>同樣指令（如「建立 Clock 圖」），比較官方工具生成的接線 vs 本專案固定範本，用 inspect_action_graph 交叉驗證</td></tr>
+<tr><td>回應速度</td><td>官方 MCP Server 走語意搜尋，本專案走本機向量索引，比較延遲</td></tr>
+<tr><td>涵蓋範圍</td><td>官方應涵蓋更完整的 Isaac Sim 版本/API 異動歷史；本專案僅涵蓋實測驗證過的節點</td></tr>
+<tr><td>費用與依賴</td><td>確認官方 MCP Server 是否需要外部 API 金鑰或網路連線（本專案完全內網、免費）</td></tr>
+</table>
+<div class="section-label">建議的整合方式（若決定採用）</div>
+<ul class="step-list">
+<li>不建議整體替換——本專案六個 create_ros2_*_graph 工具是「固定範本」，可靠度已實測驗證，不應該用「語意搜尋建議」取代</li>
+<li>較合理的整合點：把官方 MCP Server 當作 query_isaac_docs 的「第二意見」，兩者查詢結果不一致時，以親手用 get_type_name() 驗證的結果為準</li>
+<li>優先評估項目：官方是否有公開的、完整的節點型別速查表，可以直接補進本專案知識庫</li>
+</ul>`
+        }
+      }
+    }
+  }
+}
+
+
+};
+
+/* ============================================================
+   渲染邏輯
+   ============================================================ */
+const colorMap = {
+  blue:   {bg:"var(--blue)",   ink:"var(--blue-ink)",   line:"var(--blue-line)"},
+  orange: {bg:"var(--orange)", ink:"var(--orange-ink)", line:"var(--orange-line)"},
+  yellow: {bg:"var(--yellow)", ink:"var(--yellow-ink)", line:"var(--yellow-line)"},
+  pink:   {bg:"var(--pink)",   ink:"var(--pink-ink)",   line:"var(--pink-line)"},
+  gray:   {bg:"var(--gray)",   ink:"var(--gray-ink)",   line:"var(--gray-line)"}
+};
+
+let state = { world:null, cat:null };
+
+function renderWorldbar(){
+  const bar = document.getElementById('worldbar');
+  let html = `<div class="brand" onclick="goHome()" style="cursor:pointer;">機器人場景建置與訓練手冊</div>`;
+  Object.entries(WORLDS).forEach(([key,w])=>{
+    html += `<div class="world-tab ${state.world===key?'active':''}" onclick="enterWorld('${key}')">${w.short}</div>`;
+  });
+  bar.innerHTML = html;
+}
+
+function goHome(){
+  state = {world:null, cat:null};
+  renderWorldbar();
+  const app = document.getElementById('app');
+  let html = `
+    <div class="landing">
+      <div class="landing-head">
+        <h1>機器人場景建置與訓練手冊</h1>
+        <p>選擇一個主題開始閱讀。各部分彼此獨立，可依需求直接進入對應內容。</p>
+      </div>
+      <div class="world-cards">
+  `;
+  Object.entries(WORLDS).forEach(([key,w], idx)=>{
+    const c = colorMap[w.color];
+    html += `
+      <div class="world-card" style="border-color:${c.line}" onclick="enterWorld('${key}')">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:${c.ink};"></div>
+        <div class="num">0${idx+1}</div>
+        <h2>${w.label}</h2>
+        <p>${w.desc}</p>
+        <div class="enter" style="color:${c.ink};">進入 →</div>
+      </div>
+    `;
+  });
+  html += `</div></div>`;
+  app.innerHTML = html;
+}
+
+function enterWorld(key){
+  state = {world:key, cat:null};
+  renderWorldbar();
+  renderWorldHome();
+}
+
+function renderWorldHome(){
+  const w = WORLDS[state.world];
+  const c = colorMap[w.color];
+  buildLayout();
+  renderSidebar('');
+  const main = document.getElementById('mainArea');
+  let html = `<h2 class="category-title">${w.label}</h2><p class="category-desc">${w.desc}</p><div class="topic-grid">`;
+  Object.entries(w.categories).forEach(([ckey, cat])=>{
+    const cc = colorMap[cat.color];
+    html += `
+      <div class="topic-card" style="border-color:${cc.line}" onclick="state.cat='${ckey}';renderSidebar('');renderCategory('${ckey}')">
+        <h3>${cat.label}</h3>
+        <p>${cat.desc}</p>
+      </div>
+    `;
+  });
+  html += `</div>`;
+  main.innerHTML = html;
+}
+
+function buildLayout(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="layout">
+      <div class="sidebar">
+        <div class="world-title">${WORLDS[state.world].label}</div>
+        <div class="world-desc">${WORLDS[state.world].desc}</div>
+        <input class="search-box" id="searchBox" placeholder="搜尋關鍵字...">
+        <div id="catList"></div>
+      </div>
+      <div class="main" id="mainArea"></div>
+    </div>
+  `;
+  document.getElementById('searchBox').addEventListener('input', (e)=>{
+    renderSidebar(e.target.value);
+    handleSearch(e.target.value);
+  });
+}
+
+function renderSidebar(filter){
+  const w = WORLDS[state.world];
+  const list = document.getElementById('catList');
+  if(!list) return;
+  list.innerHTML = '';
+  Object.entries(w.categories).forEach(([key, cat])=>{
+    const c = colorMap[cat.color];
+    let visible = true;
+    if(filter){
+      const hay = (cat.label + Object.values(cat.topics).map(t=>t.title+t.summary).join(' ')).toLowerCase();
+      visible = hay.includes(filter.toLowerCase());
+    }
+    if(!visible) return;
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn' + (state.cat===key ? ' active' : '');
+    btn.innerHTML = `<span class="dot" style="background:${c.ink}"></span>${cat.label}<span class="cat-count">${Object.keys(cat.topics).length}</span>`;
+    btn.onclick = ()=>{ state.cat = key; renderSidebar(document.getElementById('searchBox').value); renderCategory(key); };
+    list.appendChild(btn);
+  });
+}
+
+function renderCategory(catKey){
+  const w = WORLDS[state.world];
+  const cat = w.categories[catKey];
+  const c = colorMap[cat.color];
+  const main = document.getElementById('mainArea');
+  let html = `
+    <div class="breadcrumb"><button onclick="renderWorldHome()">${w.label}</button><span class="sep">/</span>${cat.label}</div>
+    <h2 class="category-title">${cat.label}</h2>
+    <p class="category-desc">${cat.desc}</p>
+    <div class="topic-grid">
+  `;
+  Object.entries(cat.topics).forEach(([tkey, topic], idx)=>{
+    html += `
+      <div class="topic-card" style="border-color:${c.line}" onclick="renderTopic('${catKey}','${tkey}')">
+        <h3>${topic.title}</h3>
+        <p>${topic.summary}</p>
+      </div>
+    `;
+  });
+  html += `</div>`;
+  main.innerHTML = html;
+}
+
+function renderTopic(catKey, topicKey){
+  state.cat = catKey;
+  const w = WORLDS[state.world];
+  renderSidebar(document.getElementById('searchBox') ? document.getElementById('searchBox').value : '');
+  const cat = w.categories[catKey];
+  const topic = cat.topics[topicKey];
+  const c = colorMap[cat.color];
+  const main = document.getElementById('mainArea');
+  main.innerHTML = `
+    <div class="breadcrumb">
+      <button onclick="renderWorldHome()">${w.label}</button><span class="sep">/</span>
+      <button onclick="renderCategory('${catKey}')">${cat.label}</button><span class="sep">/</span>
+      ${topic.title}
+    </div>
+    <div class="detail-panel" style="border-color:${c.line}">
+      <h2>${topic.title}</h2>
+      <div class="lede">${topic.summary}</div>
+      ${topic.content}
+    </div>
+  `;
+}
+
+function handleSearch(q){
+  const w = WORLDS[state.world];
+  const main = document.getElementById('mainArea');
+  if(!q){ renderWorldHome(); return; }
+  const query = q.toLowerCase();
+  let html = `<h2 class="category-title">搜尋結果</h2><div class="topic-grid">`;
+  let found = 0;
+  Object.entries(w.categories).forEach(([ckey, cat])=>{
+    const c = colorMap[cat.color];
+    Object.entries(cat.topics).forEach(([tkey, topic])=>{
+      const hay = (topic.title + topic.summary + cat.label).toLowerCase();
+      if(hay.includes(query)){
+        found++;
+        html += `
+          <div class="topic-card" style="border-color:${c.line}" onclick="renderTopic('${ckey}','${tkey}')">
+            <h3>${topic.title}</h3>
+            <p>${topic.summary}</p>
+          </div>
+        `;
+      }
+    });
+  });
+  if(found===0){ html += `<p class="category-desc">無符合結果。</p>`; }
+  html += `</div>`;
+  main.innerHTML = html;
+}
+
+goHome();
+</script>
+</body>
+</html>
